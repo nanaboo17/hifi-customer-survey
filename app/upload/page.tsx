@@ -4,20 +4,29 @@ type Customer={customer_id:string;phone_number:string}
 function csv(text:string):string[][]{const first=text.split(/\r?\n/)[0];const delimiter=first.includes(';')&&!first.includes(',')?';':',';const rows:string[][]=[];let row:string[]=[],field='',quoted=false
 for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(field);field=''}else if(c==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}else field+=c}if(row.length||field){row.push(field);rows.push(row)}return rows.filter(x=>x.some(y=>y.trim()))}
 async function xlsx(buffer:ArrayBuffer):Promise<string[][]>{
-const v=new DataView(buffer),b=new Uint8Array(buffer),str=new TextDecoder(),xml=new Map<string,string>()
-const u16=(i:number)=>v.getUint16(i,true),u32=(i:number)=>v.getUint32(i,true)
-let total=0
-for(let i=0;i<b.length-30;){if(u32(i)!==0x04034b50){i++;continue}const flags=u16(i+6),method=u16(i+8),len=u32(i+18),nameLen=u16(i+26),extra=u16(i+28),start=i+30+nameLen+extra,name=str.decode(b.slice(i+30,i+30+nameLen))
-if(flags&8)throw Error('Format XLSX tidak didukung. Simpan ulang file di Excel.')
-if(start+len>b.length)throw Error('File tidak valid')
-if(name==='xl/sharedStrings.xml'||/^xl\/worksheets\/sheet\d+\.xml$/.test(name)){const data=b.slice(start,start+len);let contents:Uint8Array
-if(method===0)contents=data;else if(method===8){const decompressed=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));contents=new Uint8Array(await new Response(decompressed).arrayBuffer())}else throw Error('Kompresi tidak didukung')
-total+=contents.length;if(total>12000000)throw Error('File Excel terlalu besar');xml.set(name,str.decode(contents))}i=start+len}
-const parse=(text:string)=>{const d=new DOMParser().parseFromString(text,'application/xml');if(d.querySelector('parsererror'))throw Error('Format Excel tidak valid');return d}
-const shared=xml.get('xl/sharedStrings.xml')?Array.from(parse(xml.get('xl/sharedStrings.xml')!).getElementsByTagName('si')).map(x=>x.textContent||''):[]
-const file=[...xml.keys()].filter(x=>/^xl\/worksheets\/sheet\d+\.xml$/.test(x)).sort()[0];if(!file)throw Error('Worksheet tidak ditemukan')
-const rs=Array.from(parse(xml.get(file)!).getElementsByTagName('row'));if(rs.length>501)throw Error('Maksimal 500 pelanggan')
-return rs.map(r=>{const row:string[]=[];for(const c of Array.from(r.getElementsByTagName('c'))){const ref=c.getAttribute('r')?.match(/^[A-Z]+/)?.[0]||'A';let n=0;for(const x of ref)n=n*26+x.charCodeAt(0)-64;n--;if(n>30)continue;const val=c.getElementsByTagName('v')[0]?.textContent||'';row[n]=c.getAttribute('t')==='s'?(shared[Number(val)]||''):c.getAttribute('t')==='inlineStr'?(c.getElementsByTagName('is')[0]?.textContent||''):val}return row})
+ const v=new DataView(buffer),bytes=new Uint8Array(buffer),decoder=new TextDecoder(),parts=new Map<string,string>()
+ const u16=(i:number)=>v.getUint16(i,true),u32=(i:number)=>v.getUint32(i,true)
+ let eocd=-1;for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--){if(u32(i)===0x06054b50){eocd=i;break}}
+ if(eocd<0)throw Error('File XLSX tidak valid')
+ let pos=u32(eocd+16),total=0
+ for(let i=0;i<u16(eocd+10);i++){
+  if(u32(pos)!==0x02014b50)throw Error('ZIP directory tidak valid')
+  const method=u16(pos+10),compressed=u32(pos+20),size=u32(pos+24),nameLength=u16(pos+28),extra=u16(pos+30),comment=u16(pos+32),offset=u32(pos+42)
+  const name=decoder.decode(bytes.slice(pos+46,pos+46+nameLength));pos+=46+nameLength+extra+comment
+  if(name!=='xl/sharedStrings.xml'&&!/^xl\/worksheets\/sheet\d+\.xml$/.test(name))continue
+  if(size>8000000||compressed>2000000||u32(offset)!==0x04034b50)throw Error('File Excel tidak didukung')
+  const start=offset+30+u16(offset+26)+u16(offset+28),data=bytes.slice(start,start+compressed);let result:Uint8Array
+  if(method===0)result=data
+  else if(method===8){const out=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));result=new Uint8Array(await new Response(out).arrayBuffer())}
+  else throw Error('Kompresi XLSX tidak didukung')
+  total+=result.length;if(total>12000000)throw Error('File Excel terlalu besar')
+  parts.set(name,decoder.decode(result))
+ }
+ const parse=(x:string)=>{const doc=new DOMParser().parseFromString(x,'application/xml');if(doc.querySelector('parsererror'))throw Error('XML Excel tidak valid');return doc}
+ const strings=parts.get('xl/sharedStrings.xml')?Array.from(parse(parts.get('xl/sharedStrings.xml')!).getElementsByTagName('si')).map(x=>x.textContent||''):[]
+ const sheet=[...parts.keys()].filter(x=>/^xl\/worksheets\/sheet\d+\.xml$/.test(x)).sort()[0];if(!sheet)throw Error('Worksheet Excel tidak ditemukan')
+ const rows=Array.from(parse(parts.get(sheet)!).getElementsByTagName('row'));if(rows.length>501)throw Error('Maksimal 500 pelanggan')
+ return rows.map(r=>{const row:string[]=[];for(const c of Array.from(r.getElementsByTagName('c'))){const ref=c.getAttribute('r')?.match(/^[A-Z]+/)?.[0]||'A';let index=0;for(const char of ref)index=index*26+char.charCodeAt(0)-64;index--;if(index>30)continue;const raw=c.getElementsByTagName('v')[0]?.textContent||'';row[index]=c.getAttribute('t')==='s'?(strings[Number(raw)]||''):c.getAttribute('t')==='inlineStr'?(c.getElementsByTagName('is')[0]?.textContent||''):raw}return row})
 }
 function customers(rows:string[][]):Customer[]{if(rows.length<2)throw Error('File kosong');const h=rows[0].map(x=>x.replace(/^\uFEFF/,'').trim().toLowerCase().replace(/[\s-]+/g,'_'));const id=h.findIndex(x=>['customer_id','customerid','cust_id','id'].includes(x)),phone=h.findIndex(x=>['phone_number','phone','msisdn','no_hp','whatsapp'].includes(x));if(id<0||phone<0)throw Error('Kolom customer_id dan phone_number wajib ada');if(rows.length>501)throw Error('Maksimal 500 pelanggan');return rows.slice(1).map(x=>({customer_id:(x[id]||'').trim(),phone_number:(x[phone]||'').trim()}))}
 export default function UploadPage(){

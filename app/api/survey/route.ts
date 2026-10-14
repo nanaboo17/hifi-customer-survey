@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { isReason, REASONS } from '@/lib/survey'
+import { hashToken, isValidTokenFormat } from '@/lib/invitations'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
+
+export const runtime = 'nodejs'
+const noStore = { 'Cache-Control': 'no-store' }
+export async function POST(req: NextRequest) {
+  try {
+    if (Number(req.headers.get('content-length') || 0) > 5000)
+      return NextResponse.json({ error: 'Data terlalu besar.' }, { status: 413, headers: noStore })
+    const payload: unknown = await req.json()
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+      return NextResponse.json({ error: 'Format tidak valid.' }, { status: 400, headers: noStore })
+    const { token, reason, details } = payload as Record<string, unknown>
+    if (typeof token !== 'string' || !isValidTokenFormat(token))
+      return NextResponse.json({ error: 'Tautan survei tidak valid.' }, { status: 400, headers: noStore })
+    if (!isReason(reason))
+      return NextResponse.json({ error: 'Pilihan alasan tidak valid.' }, { status: 400, headers: noStore })
+    const notes = reason === 'other' && typeof details === 'string' ? details.trim() : null
+    if (reason === 'other' && (!notes || notes.length < 3 || notes.length > 500))
+      return NextResponse.json({ error: 'Mohon isi alasan (3–500 karakter).' }, { status: 400, headers: noStore })
+    const db = getSupabaseAdmin()
+    if (!db) return NextResponse.json({ error: 'Layanan survei belum dikonfigurasi.' }, { status: 503, headers: noStore })
+    const { data: invitation, error: lookupError } = await db.from('survey_invitations')
+      .select('id, expires_at, revoked_at').eq('token_hash', hashToken(token)).maybeSingle()
+    if (lookupError) { console.error('Lookup failure', lookupError.code); throw new Error('lookup') }
+    if (!invitation || invitation.revoked_at) return NextResponse.json({ error: 'Tautan survei tidak valid.' }, { status: 403, headers: noStore })
+    if (Date.parse(invitation.expires_at) <= Date.now())
+      return NextResponse.json({ error: 'Tautan survei sudah kedaluwarsa.' }, { status: 403, headers: noStore })
+    const title = REASONS.find(x => x.id === reason)!.title
+    const { error } = await db.from('survey_responses').insert({
+      invitation_id: invitation.id, selected_reason: title, additional_reason: notes,
+    })
+    if (error?.code === '23505') return NextResponse.json({ error: 'Survei ini sudah pernah dijawab.' }, { status: 409, headers: noStore })
+    if (error) { console.error('Survey save failed', error.code); throw new Error('insert') }
+    return NextResponse.json({ ok: true }, { headers: noStore })
+  } catch {
+    return NextResponse.json({ error: 'Gagal menyimpan jawaban. Silakan coba lagi.' }, { status: 500, headers: noStore })
+  }
+}

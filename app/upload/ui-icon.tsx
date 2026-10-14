@@ -1,0 +1,1 @@
+export function ArrowUpTrayIcon(){return <span aria-hidden="true" className="mb-2 block text-3xl">↑</span>}

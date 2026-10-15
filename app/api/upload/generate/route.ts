@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server'
 import {createHash,randomBytes} from 'node:crypto'
-import {getSupabaseAdmin} from '@/lib/supabase-admin'
+import {getSupabaseAdmin,missingSupabaseSettings} from '@/lib/supabase-admin'
 import {staff,originOK,encrypt,decrypt} from '@/lib/upload-security'
 export const runtime='nodejs'
 export const dynamic='force-dynamic'
@@ -14,7 +14,7 @@ export async function POST(req:NextRequest){
  if(!Array.isArray(b.customers)||!b.customers.length||b.customers.length>500)return NextResponse.json({error:'Maksimal 500 pelanggan per batch.'},{status:400,headers:h})
  const set=new Map<string,string>()
  for(const r of b.customers){const id=typeof r.customer_id==='string'?r.customer_id.trim():'';const p=typeof r.phone_number==='string'?phone(r.phone_number):null;if(!id||id.length>100||!p)return NextResponse.json({error:'Customer ID atau nomor telepon tidak valid.'},{status:400,headers:h});if(set.has(id)&&set.get(id)!==p)return NextResponse.json({error:'Duplicate ID dengan nomor berbeda: '+id},{status:400,headers:h});set.set(id,p)}
- const db=getSupabaseAdmin();if(!db)return NextResponse.json({error:'Supabase belum dikonfigurasi.'},{status:503,headers:h})
+ const db=getSupabaseAdmin();if(!db)return NextResponse.json({error:'Variabel Cloudflare Worker belum tersedia: '+missingSupabaseSettings().join(', ')+'. Periksa Runtime Variables and Secrets, bukan Build Variables.'},{status:503,headers:h})
  const {data,error}=await db.from('survey_invitations').select('customer_id,phone_number,token_ciphertext,expires_at,revoked_at').in('customer_id',[...set.keys()]).order('created_at',{ascending:false})
  if(error)throw Error('Lookup '+error.code)
  const previous=new Map<string,NonNullable<typeof data>[number]>()

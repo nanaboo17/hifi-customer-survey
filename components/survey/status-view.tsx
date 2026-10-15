@@ -44,17 +44,17 @@ export function StatusView({ status }: { status: LinkProblem }) {
   const Icon = status === 'unconfigured' ? AlertTriangle : tone.icon
 
   return (
-    <div className="max-w-[560px] animate-fade-up">
-      <span className={cn('flex h-11 w-11 items-center justify-center rounded-lg', tone.badge)} aria-hidden>
+    <div className="mx-auto mt-10 max-w-[600px] border-[3px] border-[#241638] bg-white p-7 shadow-[7px_7px_0_#241638] sm:p-10">
+      <span className={cn('flex h-14 w-14 items-center justify-center rounded-md border-2 border-[#241638]', tone.badge)} aria-hidden>
         <Icon size={22} strokeWidth={1.7} />
       </span>
 
-      <h1 className="mt-5 text-[24px] font-extrabold leading-tight tracking-[-0.6px] text-ink sm:text-[28px]">
+      <h1 className="mt-6 text-2xl font-black leading-tight tracking-tight text-[#241638] sm:text-3xl">
         {info.title}
       </h1>
-      <p className="mt-3 text-[15px] leading-[1.7] text-muted">{info.message}</p>
+      <p className="mt-3 text-[15px] font-medium leading-7 text-[#655d70]">{info.message}</p>
 
-      <div className="mt-7 border-t border-line pt-5">
+      <div className="mt-7 border-t-2 border-[#241638] pt-5">
         <p className="flex items-center gap-2 text-[13px] font-semibold text-ink">
           <ShieldCheck size={16} className="text-brand" aria-hidden /> Butuh bantuan?
         </p>

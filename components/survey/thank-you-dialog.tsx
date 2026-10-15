@@ -1,40 +1,17 @@
 'use client'
 
 import * as Dialog from '@radix-ui/react-dialog'
-import { Check } from 'lucide-react'
+import { Check, PartyPopper } from 'lucide-react'
 
-type ThankYouDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export function ThankYouDialog({ open, onOpenChange }: ThankYouDialogProps) {
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-ink/45 data-[state=open]:animate-fade-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-line bg-white p-7 shadow-xl outline-none data-[state=open]:animate-pop">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden>
-            <Check size={22} strokeWidth={2.5} />
-          </span>
-
-          <Dialog.Title className="mt-5 text-[20px] font-extrabold tracking-[-0.3px] text-ink">
-            Terima kasih atas jawaban Anda
-          </Dialog.Title>
-          <Dialog.Description className="mt-2.5 text-[14px] leading-relaxed text-muted">
-            Masukan Anda sangat berarti bagi kami. Jawaban yang diberikan akan membantu HiFi memahami kebutuhan
-            pelanggan dan terus meningkatkan kualitas layanan internet.
-          </Dialog.Description>
-
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-5 text-sm font-bold text-white transition-colors duration-200 hover:bg-brand-hover"
-          >
-            Selesai
-          </button>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  )
+type Props={open:boolean;onOpenChange:(open:boolean)=>void}
+export function ThankYouDialog({open,onOpenChange}:Props){
+ return <Dialog.Root open={open} onOpenChange={onOpenChange}><Dialog.Portal>
+  <Dialog.Overlay className="fixed inset-0 z-50 bg-[#22152f]/75"/>
+  <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,460px)] -translate-x-1/2 -translate-y-1/2 border-[4px] border-[#22152f] bg-white p-7 text-center shadow-[9px_9px_0_#ffce00] outline-none sm:p-10">
+   <div className="mx-auto flex h-20 w-20 -rotate-6 items-center justify-center rounded-lg border-4 border-[#22152f] bg-[#26890c] text-white shadow-[5px_5px_0_#22152f]"><Check size={42} strokeWidth={4}/></div>
+   <Dialog.Title className="mt-7 text-3xl font-black leading-tight text-[#22152f]">Jawaban terkirim!</Dialog.Title>
+   <Dialog.Description className="mt-3 text-sm font-medium leading-7 text-[#62586b]">Terima kasih sudah meluangkan waktu. Masukan Anda membantu HiFi meningkatkan kualitas layanan internet.</Dialog.Description>
+   <button type="button" onClick={()=>onOpenChange(false)} className="mt-7 flex min-h-12 w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#22152f] bg-[#4924ac] px-6 font-black text-white shadow-[4px_4px_0_#22152f] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"><PartyPopper size={19}/> Selesai</button>
+  </Dialog.Content>
+ </Dialog.Portal></Dialog.Root>
 }

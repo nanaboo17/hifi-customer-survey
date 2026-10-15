@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
-import { AlertCircle, ArrowRight, CheckCircle2, Clock3, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, ArrowRight, CheckCircle2, Clock3, Loader2 } from 'lucide-react'
 import { REASONS, type Reason } from '@/lib/survey'
 import { cn } from '@/lib/utils'
 import { AnswerCard } from '@/components/survey/answer-card'
@@ -79,7 +79,7 @@ export default function SurveyPage({ status, token }: { status: SurveyStatus; to
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen bg-[#f5f2ec] text-[#241638]">
-        <header className="border-b-[3px] border-[#241638] bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"><span className="-rotate-3 rounded-md bg-[#ed174c] px-3 py-1 text-2xl font-black italic text-white shadow-[3px_3px_0_#241638]">HiFi!</span><span className="text-xs font-black uppercase tracking-[0.18em]">Customer Survey</span></div></header><main className="mx-auto w-full max-w-6xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
+        <header className="border-b-[3px] border-[#241638] bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"><img src="/images/indosat-wordmark.svg" alt="Indosat Ooredoo Hutchison" className="h-auto w-[145px] sm:w-[190px]" /><span className="text-xs font-black uppercase tracking-[0.18em]">Customer Survey</span></div></header><main className="mx-auto w-full max-w-6xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
           {isSurvey ? (
             alreadySubmitted ? (
               <StatusView status="already_submitted" />
@@ -116,9 +116,7 @@ export default function SurveyPage({ status, token }: { status: SurveyStatus; to
 }
 
 function Intro() {
- return <section className="relative overflow-hidden border-[3px] border-[#241638] bg-[#4924ac] px-6 py-9 text-white shadow-[7px_7px_0_#241638] sm:px-10 sm:py-12">
-  <div aria-hidden className="pointer-events-none absolute -right-12 -top-14 h-44 w-44 rotate-12 border-[19px] border-[#ffce00]"/>
-  <div aria-hidden className="pointer-events-none absolute -bottom-16 right-1/4 h-36 w-36 rotate-45 bg-[#e21b3c]"/>
+ return <section className="border-[3px] border-[#241638] bg-[#4924ac] px-6 py-9 text-white shadow-[7px_7px_0_#241638] sm:px-10 sm:py-12">
   <div className="relative max-w-3xl">
    <span className="inline-block -rotate-2 bg-[#ffce00] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#241638]">HiFi ingin tahu!</span>
    <h1 className="mt-6 text-3xl font-black leading-[1.08] tracking-tight sm:text-5xl">Boleh cerita sedikit tentang <span className="text-[#ffce00]">internet kamu?</span></h1>

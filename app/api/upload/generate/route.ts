@@ -26,5 +26,5 @@ export async function POST(req:NextRequest){
  if(err){skipped.push(id+': insert failed '+err.code);continue}rows.push([id,p,req.nextUrl.origin+'/s/'+token].map(quote).join(','));created++
  }
  return NextResponse.json({csv:'\uFEFFcustomer_id,phone_number,survey_link\r\n'+rows.join('\r\n')+'\r\n',created,reused,skipped},{headers:h})
- }catch(e){console.error('Link generation error',e instanceof Error?e.message:'unknown');return NextResponse.json({error:'Gagal membuat link. Periksa konfigurasi Cloudflare dan Supabase.'},{status:500,headers:h})}
+ }catch(e){const message=e instanceof Error?e.message:'unknown';console.error('Link generation error',message);const hint=message.includes('SURVEY_LINK_ENCRYPTION_KEY')||message==='Invalid encryption key'?'Kunci enkripsi belum valid di Cloudflare Worker.':message.startsWith('Lookup')?'Supabase menolak pembacaan undangan ('+message.replace('Lookup ','')+').':message.includes('Invalid URL')?'URL Supabase tidak valid.':'Kesalahan server. Periksa Cloudflare Observability Logs.';return NextResponse.json({error:hint},{status:500,headers:h})}
 }

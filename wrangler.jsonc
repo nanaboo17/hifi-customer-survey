@@ -3,9 +3,30 @@
   "name": "hifi-customer-survey",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-14",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "persist": true
+    },
+    "issue_detection": {
+      "enabled": false
+    }
+  },
+  "vars": {
+    "SUPABASE_URL": "https://psxvqyetczecgqwjjpdj.supabase.co"
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 import {useRef,useState} from 'react'
-import {UploadCloud,FileSpreadsheet,FileCheck2,Download,ArrowRight,LockKeyhole,LogOut,CheckCircle2,AlertCircle,Loader2,ShieldCheck,ChevronRight,RefreshCw,Info,CloudUpload} from 'lucide-react'
+import {UploadCloud,FileSpreadsheet,FileCheck2,Download,ArrowRight,LockKeyhole,LogOut,CheckCircle2,AlertCircle,Loader2,ShieldCheck,ChevronRight,RefreshCw,Info} from 'lucide-react'
 type Customer={customer_id:string;phone_number:string}
 function csv(text:string):string[][]{const first=text.split(/\r?\n/)[0];const delimiter=first.includes(';')&&!first.includes(',')?';':',';const rows:string[][]=[];let row:string[]=[],field='',quoted=false
 for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(field);field=''}else if(c==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}else field+=c}if(row.length||field){row.push(field);rows.push(row)}return rows.filter(x=>x.some(y=>y.trim()))}
@@ -43,7 +43,6 @@ export default function UploadPage(){
  const [csvText,setCsvText]=useState('')
  const [result,setResult]=useState('')
  const [success,setSuccess]=useState<{created:number;reused:number;skipped:number}|null>(null)
- const [showMore,setShowMore]=useState(false)
  const fileInput=useRef<HTMLInputElement>(null)
 
  async function login(){

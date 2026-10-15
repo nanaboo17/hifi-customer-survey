@@ -1,6 +1,6 @@
 'use client'
 import {useRef,useState} from 'react'
-import {UploadCloud,FileSpreadsheet,FileCheck2,Download,ArrowRight,LockKeyhole,LogOut,CheckCircle2,AlertCircle,Loader2,ShieldCheck,ChevronRight,RefreshCw,Info} from 'lucide-react'
+import {UploadCloud,FileSpreadsheet,Download,ArrowRight,LockKeyhole,LogOut,CheckCircle2,AlertCircle,Loader2,RefreshCw} from 'lucide-react'
 type Customer={customer_id:string;phone_number:string}
 function csv(text:string):string[][]{const first=text.split(/\r?\n/)[0];const delimiter=first.includes(';')&&!first.includes(',')?';':',';const rows:string[][]=[];let row:string[]=[],field='',quoted=false
 for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(field);field=''}else if(c==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}else field+=c}if(row.length||field){row.push(field);rows.push(row)}return rows.filter(x=>x.some(y=>y.trim()))}
@@ -89,87 +89,71 @@ export default function UploadPage(){
  }
  const hasFile=list.length>0
  const step=success?3:hasFile?2:1
- return <main className="min-h-screen bg-[#f7f9fd] text-slate-900">
-   <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-rose-50/80 to-transparent"/>
-   <div className="relative mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-8 sm:pt-9">
-    <header className="flex items-center justify-between border-b border-slate-200/80 pb-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-16 items-center justify-center rounded-xl bg-[#ed174c] text-xl font-extrabold tracking-tight text-white shadow-sm">HiFi</div>
-        <div className="hidden border-l border-slate-200 pl-3 sm:block"><p className="text-sm font-semibold">Survey Tools</p><p className="text-xs text-slate-500">Internal workspace</p></div>
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600"><ShieldCheck size={14} className="text-[#ed174c]"/> Staff only</span>
-        {logged&&<button onClick={()=>void logout()} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"><LogOut size={16}/> <span className="hidden sm:inline">Keluar</span></button>}
-      </div>
-    </header>
-    <div className="pb-7 pt-10 sm:pb-9 sm:pt-12">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-rose-100/70 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-[#b70c3a]">Customer engagement <span className="h-1 w-1 rounded-full bg-rose-400"/> Link generator</div>
-      <h1 className="max-w-3xl text-3xl font-extrabold tracking-tight text-[#17243b] sm:text-4xl">Generate Link <span className="text-[#ed174c]">Survei Pelanggan</span></h1>
-      <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">Siapkan link survei unik untuk setiap pelanggan HiFi. Upload data, cek hasilnya, lalu unduh file yang siap digunakan di KATA.</p>
-    </div>
-    {!logged?
-     <section className="mx-auto max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_16px_60px_rgba(25,42,79,0.06)]">
-      <div className="p-7 sm:p-10">
-        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-[#ed174c]"><LockKeyhole size={24}/></div>
-        <h2 className="text-xl font-bold">Akses Petugas</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-500">Masukkan password internal untuk membuat dan mengunduh link pelanggan.</p>
-        <form className="mt-7 space-y-4" onSubmit={e=>{e.preventDefault();void login()}}>
-          <div><label htmlFor="pwd" className="mb-2 block text-sm font-semibold">Password</label><input id="pwd" type="password" autoComplete="current-password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="Masukkan password petugas" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 outline-none transition focus:border-[#ed174c] focus:ring-4 focus:ring-rose-100"/></div>
-          <button disabled={busy||!pass} type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ed174c] font-semibold text-white transition hover:bg-[#ce0f40] disabled:cursor-not-allowed disabled:opacity-45">{busy?<><Loader2 size={18} className="animate-spin"/>Memverifikasi...</>:<>Masuk <ArrowRight size={18}/></>}</button>
-        </form>
-        {error&&<p role="alert" className="mt-4 flex gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-800"><AlertCircle size={17} className="mt-0.5 shrink-0"/>{error}</p>}
-      </div>
-     </section>
-    :<>
-     <div className="mb-7 grid grid-cols-3 items-center rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
-       {[{n:1,title:'Upload data',short:'Upload'},{n:2,title:'Generate links',short:'Generate'},{n:3,title:'Unduh untuk KATA',short:'Download'}].map((s,i)=><div key={s.n} className="flex items-center justify-center gap-2 sm:gap-3">
-        <span className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold '+(step>=s.n?'bg-[#ed174c] text-white':'bg-slate-100 text-slate-400')}>{step>s.n?<CheckCircle2 size={17}/>:s.n}</span>
-        <span className={'text-xs font-semibold sm:text-sm '+(step>=s.n?'text-[#17243b]':'text-slate-400')}><span className="sm:hidden">{s.short}</span><span className="hidden sm:inline">{s.title}</span></span>
-        {i<2&&<ChevronRight className="ml-1 hidden text-slate-300 md:block" size={15}/>}
-       </div>)}
-     </div>
-     <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-      <div className="space-y-6">
-       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_45px_rgba(25,42,79,0.04)] sm:p-7">
-        <div className="mb-6 flex items-start justify-between gap-4">
-         <div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#ed174c]">Langkah 1</p><h2 className="text-xl font-bold">Upload data pelanggan</h2><p className="mt-1 text-sm text-slate-500">Pilih file CSV atau Excel yang berisi data pelanggan.</p></div>
-         <button onClick={()=>download('template_hifi_survey.csv','customer_id,phone_number\r\nDEMO00001,6281200000101\r\nDEMO00002,6281300000102\r\n')} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-rose-200 hover:bg-rose-50"><Download size={14}/> Template</button>
-        </div>
-        <input ref={fileInput} id="upload" className="sr-only" type="file" accept=".csv,.xlsx" onChange={e=>void fileChanged(e.target.files?.[0])}/>
-        <div role="button" tabIndex={0} onKeyDown={e=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault();fileInput.current?.click()}}} onClick={()=>fileInput.current?.click()} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);void fileChanged(e.dataTransfer.files[0])}} className={'cursor-pointer rounded-2xl border-2 border-dashed px-5 py-9 text-center outline-none transition focus-visible:ring-4 focus-visible:ring-rose-200 '+(dragging?'border-[#ed174c] bg-rose-50':hasFile?'border-emerald-300 bg-emerald-50/40':'border-slate-200 bg-[#fafbfe] hover:border-rose-300 hover:bg-rose-50/30')}>
-         <div className={'mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl '+(hasFile?'bg-emerald-100 text-emerald-700':'bg-rose-50 text-[#ed174c]')}>{hasFile?<FileCheck2 size={27}/>:<UploadCloud size={27}/>}</div>
-         <p className="text-sm font-bold sm:text-base">{parsing?'Membaca file...':hasFile?filename:'Drag & drop file di sini'}</p>
-         <p className="mt-1 text-sm text-slate-500">{hasFile?list.length+' pelanggan terbaca • Klik untuk mengganti file':'atau klik untuk memilih file dari perangkat'}</p>
-         <span className="mt-4 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500">CSV, XLSX • Maks. 2 MB • 500 pelanggan</span>
-        </div>
-        <div className="mt-4 flex items-start gap-2 text-xs leading-5 text-slate-500"><Info size={15} className="mt-0.5 shrink-0"/>Pastikan file memiliki kolom <code className="font-bold text-slate-700">customer_id</code> dan <code className="font-bold text-slate-700">phone_number</code>. CSV dengan koma atau titik koma didukung.</div>
-       </section>
-       {hasFile&&<section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_45px_rgba(25,42,79,0.04)] sm:p-7">
-        <div className="mb-4 flex items-center justify-between gap-3"><div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#ed174c]">Pratinjau</p><h2 className="text-lg font-bold">Data pelanggan</h2></div><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">{list.length} baris</span></div>
-        <div className="overflow-hidden rounded-xl border border-slate-200"><div className="max-h-72 overflow-auto"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-4 py-3 font-bold">Customer ID</th><th className="px-4 py-3 font-bold">Phone number</th></tr></thead><tbody>{list.slice(0,10).map((c,i)=><tr key={i} className="border-t border-slate-100"><td className="px-4 py-3 font-medium">{c.customer_id}</td><td className="px-4 py-3 text-slate-600">{c.phone_number}</td></tr>)}</tbody></table></div></div>
-        {list.length>10&&<p className="mt-3 text-xs text-slate-500">Menampilkan 10 dari {list.length} pelanggan.</p>}
-       </section>}
-       <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_45px_rgba(25,42,79,0.04)] sm:p-7">
-         <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#ed174c]">Langkah 2</p><h2 className="text-xl font-bold">Generate unique URLs</h2><p className="mt-2 mb-5 text-sm leading-6 text-slate-500">Setiap pelanggan mendapatkan link survei pribadi. Hasilnya otomatis tersimpan di Supabase.</p>
-         <button onClick={()=>void generate()} disabled={busy||parsing||!hasFile} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ed174c] px-4 font-bold text-white shadow-sm transition hover:bg-[#ce0f40] disabled:cursor-not-allowed disabled:bg-rose-200 disabled:shadow-none">{busy?<><Loader2 size={18} className="animate-spin"/>Sedang membuat link...</>:<><RefreshCw size={18}/>Generate Unique URLs <ArrowRight size={18}/></>}</button>
-         {!hasFile&&<p className="mt-3 text-center text-xs text-slate-400">Upload file terlebih dahulu untuk mengaktifkan tombol.</p>}
-       </section>
-       {success&&<section className="rounded-3xl border border-emerald-200 bg-white p-5 sm:p-7" role="status">
-          <div className="flex items-center gap-3"><CheckCircle2 size={28} className="text-emerald-600"/><div><h2 className="text-lg font-bold">Link berhasil diproses!</h2><p className="text-sm text-slate-500">File siap diunduh untuk KATA.</p></div></div>
-          <div className="mt-5 grid grid-cols-3 gap-3">{[{n:success.created,l:'Baru'},{n:success.reused,l:'Digunakan lagi'},{n:success.skipped,l:'Dilewati'}].map(x=><div key={x.l} className="rounded-xl bg-slate-50 p-3 text-center"><p className="text-2xl font-extrabold">{x.n}</p><p className="mt-1 text-xs text-slate-500">{x.l}</p></div>)}</div>
-          <button onClick={()=>download('kata_survey_links.csv',csvText)} disabled={!csvText} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 font-bold text-white transition hover:bg-slate-700 disabled:opacity-40"><Download size={18}/>Download CSV untuk KATA</button>
-          {result&&<p className="mt-4 text-sm text-amber-700">{result}</p>}
-       </section>}
-       {error&&<p role="alert" className="flex items-start gap-2 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-900"><AlertCircle size={18} className="mt-0.5 shrink-0"/>{error}</p>}
-      </div>
-      <aside className="space-y-5">
-       <div className="rounded-3xl border border-slate-200 bg-white p-6"><h3 className="font-bold">Cara kerja</h3><div className="mt-5 space-y-5">{[{icon:FileSpreadsheet,t:'Upload data',d:'Gunakan template atau file CSV/Excel.'},{icon:RefreshCw,t:'Generate URL',d:'Link unik dibuat dan disimpan.'},{icon:Download,t:'Export ke KATA',d:'Unduh CSV untuk WhatsApp blast.'}].map((x,i)=><div key={i} className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-[#ed174c]"><x.icon size={18}/></div><div><p className="text-sm font-semibold">{x.t}</p><p className="mt-1 text-xs leading-5 text-slate-500">{x.d}</p></div></div>)}</div></div>
-       <div className="rounded-3xl bg-[#17243b] p-6 text-white"><ShieldCheck size={24} className="text-rose-300"/><h3 className="mt-4 font-bold">Data pelanggan tetap aman</h3><p className="mt-2 text-xs leading-6 text-slate-300">Akses khusus petugas. Link unik tidak menampilkan Customer ID atau nomor telepon di alamat URL.</p></div>
-       <p className="px-2 text-xs leading-5 text-slate-500">Link yang lama dari generator lokal tidak dapat dipulihkan tanpa file CSV aslinya. Simpan file ekspor secara aman.</p>
-      </aside>
-     </div>
-    </>}
-    <footer className="mt-12 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">© HiFi • Internal Survey Link Generator</footer>
+ return <main className="min-h-screen bg-[#f5f2ec] text-[#241638]">
+  <header className="border-b-[3px] border-[#241638] bg-white">
+   <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+    <div className="flex items-center gap-3"><span className="inline-block -rotate-3 rounded-md bg-[#ed174c] px-3 py-1 text-2xl font-black italic tracking-tighter text-white shadow-[3px_3px_0_#241638]">HiFi!</span><span className="hidden border-l-2 border-[#241638] pl-3 text-sm font-black uppercase tracking-widest sm:inline">Survey Studio</span></div>
+    <div className="flex items-center gap-3"><span className="text-xs font-bold uppercase tracking-widest text-[#6b6274]">Internal only</span>{logged&&<button onClick={()=>void logout()} className="flex items-center gap-2 rounded-lg border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"><LogOut size={15}/> Keluar</button>}</div>
    </div>
+  </header>
+  <div className="relative overflow-hidden bg-[#4924ac] text-white">
+   <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rotate-12 rounded-[4rem] border-[24px] border-[#ffce00] opacity-90"/>
+   <div aria-hidden="true" className="pointer-events-none absolute bottom-[-68px] left-[-55px] h-48 w-48 rotate-45 bg-[#e21b3c]"/>
+   <div aria-hidden="true" className="pointer-events-none absolute right-[18%] bottom-[-85px] h-48 w-48 rounded-full bg-[#26890c]"/>
+   <div className="relative mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
+    <p className="mb-4 inline-block -rotate-2 bg-[#ffce00] px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#241638]">Link generator / HiFi</p>
+    <h1 className="max-w-3xl text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">Satu file.<br/><span className="text-[#ffce00]">Banyak link.</span><br/>Langsung kirim.</h1>
+    <p className="mt-5 max-w-xl text-base font-medium leading-relaxed text-white/85">Upload daftar pelanggan, buat link survei unik, lalu ekspor file untuk KATA. Selesai dalam tiga langkah.</p>
+   </div>
+  </div>
+  <div className="mx-auto max-w-6xl px-5 pb-20 pt-8 sm:px-8">
+   {!logged?<section className="mx-auto max-w-md border-[3px] border-[#241638] bg-white p-7 shadow-[8px_8px_0_#241638] sm:p-10">
+    <div className="mb-5 flex h-14 w-14 rotate-[-8deg] items-center justify-center bg-[#ffce00] text-[#241638]"><LockKeyhole size={28}/></div>
+    <h2 className="text-3xl font-black">Halo, petugas!</h2>
+    <p className="mt-2 text-sm font-medium text-[#6b6274]">Masukkan password untuk masuk ke generator link.</p>
+    <form onSubmit={e=>{e.preventDefault();void login()}} className="mt-6 space-y-4">
+     <div><label htmlFor="pwd" className="mb-2 block text-sm font-black">Password</label><input id="pwd" type="password" autoComplete="current-password" placeholder="Password petugas" value={pass} onChange={e=>setPass(e.target.value)} className="h-12 w-full rounded-md border-2 border-[#241638] px-3 text-base outline-none focus:ring-4 focus:ring-[#ffce00]"/></div>
+     <button disabled={busy||!pass} type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-md border-2 border-[#241638] bg-[#26890c] font-black text-white shadow-[4px_4px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-40">{busy?<><Loader2 size={18} className="animate-spin"/> Memeriksa...</>:<>Masuk <ArrowRight size={18}/></>}</button>
+    </form>
+    {error&&<p role="alert" className="mt-5 border-l-4 border-[#e21b3c] bg-[#ffe7ec] p-3 text-sm font-bold">{error}</p>}
+   </section>:<>
+    <div className="mb-8 flex flex-wrap items-center gap-3">{[{n:1,label:'UPLOAD'},{n:2,label:'GENERATE'},{n:3,label:'DOWNLOAD'}].map(s=><div key={s.n} className={'flex items-center gap-2 rounded-md border-2 border-[#241638] px-4 py-3 text-xs font-black tracking-widest shadow-[3px_3px_0_#241638] sm:text-sm '+(step===s.n?'bg-[#ffce00]':'bg-white')}>{step>s.n?<CheckCircle2 size={18}/>:<span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#241638] text-white">{s.n}</span>}{s.label}</div>)}</div>
+    <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_310px]">
+     <div className="space-y-7">
+      <section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
+       <div className="flex items-center justify-between gap-3 border-b-[3px] border-[#241638] bg-[#ffce00] px-5 py-4 sm:px-7"><h2 className="text-xl font-black sm:text-2xl">01. Upload pelanggan</h2><FileSpreadsheet size={28}/></div>
+       <div className="p-5 sm:p-7">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="max-w-sm text-sm font-medium text-[#6b6274]">Masukkan data pelanggan dengan dua kolom: customer_id dan phone_number.</p><button onClick={()=>download('template_hifi_survey.csv','customer_id,phone_number\r\nDEMO00001,6281200000101\r\nDEMO00002,6281300000102\r\n')} className="flex shrink-0 items-center gap-2 rounded-md border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black shadow-[3px_3px_0_#241638] hover:bg-[#ffce00]"><Download size={15}/> UNDUH TEMPLATE</button></div>
+        <input ref={fileInput} id="upload" type="file" accept=".csv,.xlsx" className="sr-only" onChange={e=>void fileChanged(e.target.files?.[0])}/>
+        <div role="button" tabIndex={0} onClick={()=>fileInput.current?.click()} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.current?.click()}}} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);void fileChanged(e.dataTransfer.files[0])}} className={'group cursor-pointer border-[3px] border-dashed p-8 text-center transition focus:outline-none focus:ring-4 focus:ring-[#ffce00] sm:p-11 '+(dragging?'border-[#4924ac] bg-[#ebe3ff]':hasFile?'border-[#26890c] bg-[#effce9]':'border-[#988ca7] bg-[#f8f5ff] hover:border-[#4924ac] hover:bg-[#eee6ff]')}>
+         <div className="mx-auto mb-4 flex h-16 w-16 rotate-[-8deg] items-center justify-center rounded-md bg-[#4924ac] text-white shadow-[5px_5px_0_#241638]"><UploadCloud size={30}/></div>
+         <p className="break-all text-xl font-black sm:text-2xl">{parsing?'Membaca file...':hasFile?filename:'Tarik file ke sini!'}</p>
+         <p className="mt-2 text-sm font-medium text-[#6b6274]">{hasFile?list.length+' pelanggan terbaca. Klik untuk mengganti file.':'Atau klik untuk memilih file dari komputer'}</p>
+         <span className="mt-5 inline-block rounded-md border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black">CSV / XLSX · MAKS. 2 MB · 500 PELANGGAN</span>
+        </div>
+       </div>
+      </section>
+      {hasFile&&<section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
+       <div className="flex items-center justify-between border-b-[3px] border-[#241638] bg-[#1368ce] px-5 py-4 text-white sm:px-7"><h2 className="text-xl font-black">Cek dulu datanya!</h2><span className="rounded-md bg-white px-3 py-1 text-xs font-black text-[#241638]">{list.length} PELANGGAN</span></div>
+       <div className="p-5 sm:p-7"><div className="max-h-64 overflow-auto border-2 border-[#241638]"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-[#eae6f3]"><tr><th className="px-4 py-3 font-black">Customer ID</th><th className="px-4 py-3 font-black">Phone number</th></tr></thead><tbody>{list.slice(0,10).map((c,i)=><tr key={i} className="border-t border-[#eae6f3]"><td className="px-4 py-3 font-bold">{c.customer_id}</td><td className="px-4 py-3">{c.phone_number}</td></tr>)}</tbody></table></div>{list.length>10&&<p className="mt-3 text-xs font-medium text-[#6b6274]">Preview 10 dari {list.length} pelanggan.</p>}</div>
+      </section>}
+      <section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
+       <div className="flex items-center justify-between border-b-[3px] border-[#241638] bg-[#e21b3c] px-5 py-4 text-white sm:px-7"><h2 className="text-xl font-black sm:text-2xl">02. Bikin link survei</h2><RefreshCw size={26}/></div>
+       <div className="p-5 sm:p-7"><p className="mb-5 text-sm font-medium text-[#6b6274]">Satu pelanggan, satu link unik. Data tersimpan otomatis di Supabase.</p><button disabled={busy||parsing||!hasFile} onClick={()=>void generate()} className="flex w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#241638] bg-[#4924ac] px-4 py-4 text-lg font-black text-white shadow-[5px_5px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_#241638] disabled:cursor-not-allowed disabled:bg-[#b5aac8] disabled:shadow-none">{busy?<><Loader2 size={20} className="animate-spin"/> Sedang membuat...</>:<>GENERATE LINK <ArrowRight size={21}/></>}</button>{!hasFile&&<p className="mt-4 text-center text-xs font-bold text-[#80768c]">Upload data dulu untuk melanjutkan.</p>}</div>
+      </section>
+      {success&&<section role="status" className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
+       <div className="flex items-center gap-3 border-b-[3px] border-[#241638] bg-[#26890c] px-5 py-4 text-white sm:px-7"><CheckCircle2 size={26}/><h2 className="text-xl font-black">Selesai! Siap untuk KATA.</h2></div>
+       <div className="p-5 sm:p-7"><div className="grid grid-cols-3 gap-3">{[{n:success.created,l:'LINK BARU',color:'bg-[#ffce00]'},{n:success.reused,l:'DIPAKAI LAGI',color:'bg-[#b8dcff]'},{n:success.skipped,l:'DILEWATI',color:'bg-[#ffd2da]'}].map(x=><div key={x.l} className={'border-2 border-[#241638] p-3 text-center '+x.color}><p className="text-3xl font-black">{x.n}</p><p className="mt-1 text-[10px] font-black tracking-wide">{x.l}</p></div>)}</div><button disabled={!csvText} onClick={()=>download('kata_survey_links.csv',csvText)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#241638] bg-[#26890c] px-4 py-4 text-lg font-black text-white shadow-[5px_5px_0_#241638] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"><Download size={22}/> DOWNLOAD CSV UNTUK KATA</button>{result&&<p className="mt-4 border-l-4 border-[#ffce00] bg-[#fff5c9] p-3 text-sm font-semibold">{result}</p>}</div>
+      </section>}
+      {error&&<p role="alert" className="border-[3px] border-[#e21b3c] bg-[#ffe8ec] p-4 text-sm font-bold text-[#8c1030]"><AlertCircle className="mr-2 inline" size={20}/>{error}</p>}
+     </div>
+     <aside className="space-y-6">
+      <div className="border-[3px] border-[#241638] bg-[#ffce00] p-6 shadow-[6px_6px_0_#241638]"><p className="text-xs font-black tracking-[0.15em]">HOW TO PLAY</p><h3 className="mt-2 text-3xl font-black">3 langkah. Beres!</h3><div className="mt-6 space-y-5">{[{n:'1',t:'Upload',d:'Masukkan CSV atau XLSX.'},{n:'2',t:'Generate',d:'Buat URL unik otomatis.'},{n:'3',t:'Kirim',d:'Ekspor CSV untuk KATA.'}].map(x=><div key={x.n} className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#241638] bg-white text-lg font-black">{x.n}</span><div><p className="text-base font-black">{x.t}</p><p className="text-xs font-medium">{x.d}</p></div></div>)}</div></div>
+      <div className="rotate-1 border-[3px] border-[#241638] bg-[#1368ce] p-6 text-white shadow-[6px_6px_0_#241638]"><p className="text-3xl">✦</p><h3 className="mt-2 text-xl font-black">Link pribadi</h3><p className="mt-2 text-sm font-medium leading-relaxed">Link survei dibuat unik untuk setiap pelanggan, tanpa menampilkan nomor telepon di URL.</p></div>
+     </aside>
+    </div>
+   </>}
+   <footer className="mt-14 border-t-2 border-[#241638] pt-5 text-xs font-bold uppercase tracking-wide text-[#80768c]">HiFi Survey Studio · Internal tool</footer>
+  </div>
  </main>
 }

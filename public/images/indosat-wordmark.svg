@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 178" role="img" aria-label="indosat Ooredoo Hutchison">
+<rect width="520" height="178" fill="white" fill-opacity="0"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#4b494c">
+<text x="8" y="111" font-size="112" font-weight="700" letter-spacing="-8">indosat</text>
+<text x="11" y="158" font-size="34" font-weight="400" letter-spacing="7">OOREDOO HUTCHISON</text>
+</g>
+<circle cx="468" cy="39" r="28" fill="#ffd100"/>
+<circle cx="445" cy="61" r="33" fill="#f20013"/>
+<circle cx="487" cy="62" r="28" fill="#ec008c"/>
+<circle cx="425" cy="82" r="28" fill="#20bba9" opacity=".95"/>
+<circle cx="462" cy="84" r="31" fill="#d60054" opacity=".95"/>
+</svg>

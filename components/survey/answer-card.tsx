@@ -6,68 +6,16 @@ import { AnswerArtwork } from './answer-artwork'
 import { cn } from '@/lib/utils'
 import type { Reason, ReasonIcon, ReasonOption } from '@/lib/survey'
 
-const ICONS: Record<ReasonIcon, LucideIcon> = {
-  wifi: Wifi,
-  home: Home,
-  router: Router,
-  wallet: Wallet,
-  power: Power,
-  message: MessageCircle,
-}
+const ICONS: Record<ReasonIcon, LucideIcon> = {wifi:Wifi,home:Home,router:Router,wallet:Wallet,power:Power,message:MessageCircle}
+const COLORS=['bg-[#e21b3c]','bg-[#1368ce]','bg-[#d89e00]','bg-[#26890c]','bg-[#864cbf]','bg-[#e16c12]']
 
-type AnswerCardProps = {
-  item: ReasonOption
-  index: number
-  active: boolean
-  disabled: boolean
-  onSelect: (id: Reason) => void
-}
-
-export function AnswerCard({ item, index, active, disabled, onSelect }: AnswerCardProps) {
-  const Icon = ICONS[item.icon]
-
-  return (
-    <label
-      style={{ animationDelay: `${index * 40}ms` }}
-      className={cn(
-        'group relative flex h-full animate-fade-up cursor-pointer flex-col rounded-xl border bg-white p-2.5 transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out sm:p-3',
-        'border-line hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm motion-reduce:hover:translate-y-0',
-        'has-[:focus-visible]:border-brand has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/25',
-        active && 'border-brand bg-brand-soft ring-1 ring-brand hover:border-brand',
-        disabled && 'pointer-events-none opacity-60'
-      )}
-    >
-      <input
-        type="radio"
-        name="survey-reason"
-        value={item.id}
-        checked={active}
-        disabled={disabled}
-        onChange={() => onSelect(item.id)}
-        className="sr-only"
-      />
-
-      <span
-        aria-hidden
-        className={cn(
-          'absolute right-2.5 top-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white transition-all duration-200 ease-out',
-          active ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
-        )}
-      >
-        <Check size={12} strokeWidth={3.5} />
-      </span>
-
-      <AnswerArtwork src={`/images/${item.file}`} alt={item.title} Icon={Icon} active={active} />
-
-      <span className="mt-3 flex flex-1 items-start text-left text-[13px] font-medium leading-snug text-ink sm:text-[14px]">
-        {item.title}
-      </span>
-
-      {item.id === 'other' && (
-        <span className={cn('mt-1 text-left text-[11px]', active ? 'text-brand' : 'text-muted')}>
-          Isi alasan Anda
-        </span>
-      )}
-    </label>
-  )
+type Props={item:ReasonOption;index:number;active:boolean;disabled:boolean;onSelect:(id:Reason)=>void}
+export function AnswerCard({item,index,active,disabled,onSelect}:Props){
+ const Icon=ICONS[item.icon]
+ return <label className={cn('group relative flex min-h-[202px] cursor-pointer flex-col overflow-hidden rounded-[6px] border-[3px] border-[#22152f] text-white shadow-[5px_5px_0_#22152f] transition-[transform,box-shadow,filter] duration-150 sm:min-h-[238px]',COLORS[index%COLORS.length],active?'translate-x-[3px] translate-y-[3px] ring-4 ring-[#ffce00] ring-offset-2 shadow-[2px_2px_0_#22152f]':'hover:-translate-y-1 hover:shadow-[5px_9px_0_#22152f]',disabled&&'pointer-events-none opacity-70')}>
+  <input type="radio" name="survey-reason" value={item.id} checked={active} disabled={disabled} onChange={()=>onSelect(item.id)} className="peer sr-only"/>
+  <div className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-md border-2 border-white bg-black/15 text-sm font-black">{active?<Check size={22} strokeWidth={4}/>:String.fromCharCode(65+index)}</div>
+  <div className="mx-auto mt-4 w-[80%] max-w-[180px] rounded-xl bg-white/95 p-2 shadow-[0_3px_0_rgba(0,0,0,.18)]"><AnswerArtwork src={`/images/${item.file}`} alt="" Icon={Icon} active={active}/></div>
+  <div className="flex min-h-[70px] flex-1 items-center justify-center px-3 py-4 text-center text-[14px] font-black leading-snug sm:text-[16px]">{item.title}</div>
+ </label>
 }

@@ -12,6 +12,12 @@ function cloudVar(name: string): string | undefined {
   }
 }
 
+export function missingSupabaseSettings(): string[] {
+  const url = cloudVar('SUPABASE_URL') || cloudVar('NEXT_PUBLIC_SUPABASE_URL') || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = cloudVar('SUPABASE_SECRET_KEY') || cloudVar('SUPABASE_SERVICE_ROLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+  return [...(!url ? ['SUPABASE_URL'] : []), ...(!key ? ['SUPABASE_SECRET_KEY'] : [])]
+}
+
 export function getSupabaseAdmin() {
   const url = cloudVar('SUPABASE_URL') || cloudVar('NEXT_PUBLIC_SUPABASE_URL') || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = cloudVar('SUPABASE_SECRET_KEY') || cloudVar('SUPABASE_SERVICE_ROLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY

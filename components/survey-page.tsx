@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
-import { AlertCircle, ArrowRight, CheckCircle2, Clock3, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, CheckCircle2, Clock3, Loader2, Sparkles } from 'lucide-react'
 import { REASONS, type Reason } from '@/lib/survey'
 import { cn } from '@/lib/utils'
 import { AnswerCard } from '@/components/survey/answer-card'
@@ -78,8 +78,8 @@ export default function SurveyPage({ status, token }: { status: SurveyStatus; to
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-canvas text-ink">
-        <main className="mx-auto w-full max-w-[860px] px-5 pb-24 pt-12 sm:px-8 sm:pt-20">
+      <div className="min-h-screen bg-[#f5f2ec] text-[#241638]">
+        <header className="border-b-[3px] border-[#241638] bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"><span className="-rotate-3 rounded-md bg-[#ed174c] px-3 py-1 text-2xl font-black italic text-white shadow-[3px_3px_0_#241638]">HiFi!</span><span className="text-xs font-black uppercase tracking-[0.18em]">Customer Survey</span></div></header><main className="mx-auto w-full max-w-6xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
           {isSurvey ? (
             alreadySubmitted ? (
               <StatusView status="already_submitted" />
@@ -116,28 +116,16 @@ export default function SurveyPage({ status, token }: { status: SurveyStatus; to
 }
 
 function Intro() {
-  return (
-    <section className="max-w-[640px]">
-      <div className="flex items-center gap-3 text-[13px] font-medium text-muted">
-        <span className="h-px w-7 bg-brand" aria-hidden />
-        Survei Pelanggan HiFi
-      </div>
-
-      <h1 className="mt-4 text-[29px] font-extrabold leading-[1.12] tracking-[-0.9px] text-ink sm:text-[40px]">
-        Pengecekan <span className="text-brand">Penggunaan Internet</span> Pelanggan
-      </h1>
-
-      <p className="mt-5 max-w-[54ch] text-[15px] leading-[1.75] text-muted">
-        Kami ingin memahami penyebab rendahnya penggunaan internet Anda agar kami dapat membantu mengatasi kendala yang
-        dialami dan memastikan layanan tetap optimal.
-      </p>
-
-      <div className="mt-6 flex items-center gap-2 text-[13px] text-muted">
-        <Clock3 className="h-4 w-4" aria-hidden />
-        Kurang dari 1 menit
-      </div>
-    </section>
-  )
+ return <section className="relative overflow-hidden border-[3px] border-[#241638] bg-[#4924ac] px-6 py-9 text-white shadow-[7px_7px_0_#241638] sm:px-10 sm:py-12">
+  <div aria-hidden className="pointer-events-none absolute -right-12 -top-14 h-44 w-44 rotate-12 border-[19px] border-[#ffce00]"/>
+  <div aria-hidden className="pointer-events-none absolute -bottom-16 right-1/4 h-36 w-36 rotate-45 bg-[#e21b3c]"/>
+  <div className="relative max-w-3xl">
+   <span className="inline-block -rotate-2 bg-[#ffce00] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#241638]">HiFi ingin tahu!</span>
+   <h1 className="mt-6 text-3xl font-black leading-[1.08] tracking-tight sm:text-5xl">Boleh cerita sedikit tentang <span className="text-[#ffce00]">internet kamu?</span></h1>
+   <p className="mt-4 max-w-[58ch] text-sm font-medium leading-7 text-white/90 sm:text-base">Kami ingin memahami alasan penggunaan internet Anda menurun, agar layanan HiFi bisa jadi lebih baik.</p>
+   <p className="mt-6 inline-flex items-center gap-2 rounded-md border-2 border-white/60 bg-white/15 px-3 py-2 text-xs font-bold"><Clock3 size={16}/> Cuma butuh kurang dari 1 menit</p>
+  </div>
+ </section>
 }
 
 type QuestionProps = {
@@ -170,22 +158,22 @@ function Question({
   const locked = pending || complete
 
   return (
-    <section className="mt-12 border-t border-line pt-10 sm:mt-16 sm:pt-12" aria-labelledby="survey-question">
+    <section className="mt-9 sm:mt-12" aria-labelledby="survey-question">
       <h2
         id="survey-question"
-        className="max-w-[760px] text-[20px] font-bold leading-snug tracking-[-0.3px] text-ink sm:text-[24px]"
+        className="max-w-[820px] text-2xl font-black leading-tight tracking-tight text-[#241638] sm:text-3xl"
       >
-        <span className="mr-2.5 tabular-nums text-slate-300" aria-hidden>
+        <span className="mr-3 inline-block -rotate-3 rounded-md bg-[#ffce00] px-2 py-1 text-base font-black tabular-nums text-[#241638]" aria-hidden>
           01
         </span>
         Apa alasan utama penggunaan internet Anda menurun akhir-akhir ini?
       </h2>
-      <p className="mt-2.5 text-[14px] text-muted">Pilih satu alasan yang paling sesuai dengan kondisi Anda saat ini.</p>
+      <p className="mt-3 text-[15px] font-medium text-[#655d70]">Pilih satu alasan yang paling sesuai dengan kondisi Anda saat ini.</p>
 
       <div
         role="radiogroup"
         aria-labelledby="survey-question"
-        className="mt-7 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
+        className="mt-7 grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3"
       >
         {REASONS.map((reason, index) => (
           <AnswerCard
@@ -209,8 +197,8 @@ function Question({
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            <div className="mt-6 max-w-[640px]">
-              <label htmlFor="other-reason" className="text-[13px] font-semibold text-ink">
+            <div className="mt-7 max-w-[760px] border-[3px] border-[#241638] bg-white p-5 shadow-[5px_5px_0_#241638]">
+              <label htmlFor="other-reason" className="text-[15px] font-black text-[#241638]">
                 Ceritakan alasan Anda <span className="text-brand">*</span>
               </label>
               <textarea
@@ -221,7 +209,7 @@ function Question({
                 rows={3}
                 disabled={locked}
                 placeholder="Tuliskan alasan penggunaan internet Anda menurun..."
-                className="mt-2 block w-full resize-y rounded-lg border border-line bg-white p-3.5 text-sm leading-relaxed text-ink outline-none transition placeholder:text-slate-400 focus:border-brand disabled:opacity-60"
+                className="mt-3 block w-full resize-y rounded-md border-2 border-[#241638] bg-white p-4 text-sm leading-relaxed text-[#241638] outline-none focus:ring-4 focus:ring-[#ffce00] disabled:opacity-60"
               />
               <div className="mt-1.5 flex items-center justify-between gap-3 text-xs">
                 <span className={cn(otherIsValid ? 'text-muted' : 'text-brand')}>
@@ -260,15 +248,15 @@ function Question({
         </div>
       ) : (
         selected && (
-          <div className="mt-7 flex sm:justify-end">
+          <div className="mt-9 flex sm:justify-end">
             <button
               type="button"
               onClick={onSubmit}
               disabled={!canSubmit || pending}
               aria-busy={pending}
               className={cn(
-                'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm font-bold text-white transition-colors duration-200 sm:w-auto',
-                canSubmit && !pending ? 'bg-brand hover:bg-brand-hover' : 'cursor-not-allowed bg-brand/40'
+                'inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-md border-[3px] border-[#241638] px-10 text-base font-black text-white shadow-[5px_5px_0_#241638] transition sm:w-auto',
+                canSubmit && !pending ? 'bg-[#26890c] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_#241638]' : 'cursor-not-allowed bg-[#9e94ab]'
               )}
             >
               {pending ? (
@@ -288,7 +276,7 @@ function Question({
       )}
 
       {isDemo && (
-        <p className="mt-6 text-[12px] text-amber-700">
+        <p className="mt-8 border-l-4 border-[#ffce00] bg-white p-3 text-[12px] font-bold text-[#241638]">
           Mode demo: jawaban tidak disimpan. Buka melalui tautan survei asli untuk menyimpan jawaban.
         </p>
       )}

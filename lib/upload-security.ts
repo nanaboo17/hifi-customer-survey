@@ -1,8 +1,9 @@
 import 'server-only'
 import { createHmac, timingSafeEqual, createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import type { NextRequest } from 'next/server'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 export const COOKIE='hifi_staff_session'
-function setting(k:string){const x=process.env[k];if(!x)throw Error(k+' missing');return x}
+function setting(k:string){let x:unknown;try{x=(getCloudflareContext().env as unknown as Record<string,unknown>)[k]}catch{};if(typeof x!=='string'||!x)x=process.env[k];if(typeof x!=='string'||!x)throw Error(k+' missing');return x}
 function same(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length && timingSafeEqual(x,y)}
 function sign(v:string){return createHmac('sha256',setting('UPLOAD_SESSION_SECRET')).update(v).digest('base64url')}
 export function passwordOK(s:string){const p=setting('UPLOAD_ADMIN_PASSWORD');return p.length>=16&&same(s,p)}

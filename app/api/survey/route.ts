@@ -41,6 +41,10 @@ export async function POST(req: NextRequest) {
       invitation_id: invitation.id, selected_reason: title, additional_reason: notes,
     })
     if (error?.code === '23505') return NextResponse.json({ error: 'Survei ini sudah pernah dijawab.' }, { status: 409, headers: noStore })
+    if (error?.code === '23514') {
+      console.error('Survey constraint mismatch. Apply supabase/migrations/20261016_survey_followup_constraints.sql')
+      return NextResponse.json({ error: 'Konfigurasi survei sedang diperbarui. Silakan coba kembali beberapa saat lagi.' }, { status: 503, headers: noStore })
+    }
     if (error) { console.error('Survey save failed', error.code); throw new Error('insert') }
     return NextResponse.json({ ok: true }, { headers: noStore })
   } catch {

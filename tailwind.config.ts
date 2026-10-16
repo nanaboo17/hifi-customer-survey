@@ -5,7 +5,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'Arial', 'sans-serif'],
+        sans: ['Arial', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         ink: '#17243B',

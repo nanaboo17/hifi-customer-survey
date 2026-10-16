@@ -53,9 +53,9 @@ export default function SurveyPage({status,token}:{status:SurveyStatus;token:str
  return <div className="min-h-screen bg-[#fff5f8] px-3 py-7 text-[#30202a] sm:px-6 sm:py-12">
   <div className="mx-auto w-full max-w-[440px] overflow-hidden rounded-[26px] border border-[#f3dbe3] bg-white shadow-[0_18px_65px_rgba(181,21,68,0.14)]">
    <div className="h-4 bg-[#ed174c]"/>
-   <header className="flex h-[68px] items-center justify-between border-b border-[#f6e0e8] px-6">
-    <img src="/images/indosat-wordmark.svg" alt="Indosat Ooredoo Hutchison" className="h-auto w-[112px]"/>
-    <span className="text-xs font-bold text-[#c31349]">Survei HiFi</span>
+   <header className="flex h-[88px] items-center justify-center border-b border-[#f6e0e8] px-6">
+    <img src="/images/indosat-wordmark.svg" alt="Indosat Ooredoo Hutchison" className="h-auto w-[180px] sm:w-[205px]"/>
+    
    </header>
    {!survey?<div className="p-6"><StatusView status={status as LinkProblem}/></div>:already?<div className="p-6"><StatusView status="already_submitted"/></div>:done?<div className="px-8 py-16 text-center"><div className="mx-auto mb-7 flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f6e6] text-[#24944b]"><Check size={40} strokeWidth={3}/></div><h1 className="text-2xl font-extrabold">Jawaban terkirim!</h1><p className="mt-4 text-sm leading-7 text-[#6d7590]">{thankYou}</p>{demo&&<p className="mt-5 text-xs font-semibold text-[#c31349]">Mode demo: jawaban tidak tersimpan.</p>}</div>:<>
     <div className="px-6 pb-5 pt-6">

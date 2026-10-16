@@ -45,25 +45,26 @@ export default function SurveyPage({status,token}:{status:SurveyStatus;token:str
  }
  function choose(r:Reason){
   setReason(r);setAnswers(initial);setError('')
-  if(r==='away_from_home'){void submit(r)}else setStep(2)
+  // Stay on the first question so the customer can see and change their selection.
+  // Continue submits directly for 'away from home' or opens the appropriate follow-up.
  }
- const choice=(value:string,label:string,active:boolean,action:()=>void,index:number)=> <button key={value} type="button" onClick={action} disabled={busy} className={'flex min-h-[54px] w-full items-center gap-3 rounded-full border-2 px-4 py-3 text-left text-sm font-semibold transition '+(active?'border-[#163c99] bg-[#dce7ff] text-[#153b9a] ring-2 ring-white':'border-white bg-white text-[#235be2] hover:bg-[#edf3ff]')}><span className={'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold '+(active?'bg-[#2d63f4] text-white':'bg-[#edf2ff] text-[#1f3180]')}>{active?<Check size={16}/>:String.fromCharCode(65+index)}</span>{label}</button>
- const inputStyle='w-full rounded-xl border border-[#ccd7ef] bg-white p-3 text-sm text-[#17223f] outline-none focus:border-[#2f6bff] focus:ring-2 focus:ring-[#bdd0ff]'
- return <div className="min-h-screen bg-[#eef5ff] px-3 py-7 text-[#111d3e] sm:px-6 sm:py-12">
-  <div className="mx-auto w-full max-w-[440px] overflow-hidden rounded-[26px] border border-[#dbe5fb] bg-white shadow-[0_18px_65px_rgba(38,91,188,0.16)]">
-   <div className="h-4 bg-[#2f6bff]"/>
-   <header className="flex h-[68px] items-center justify-between border-b border-[#e9eef7] px-6">
+ const choice=(value:string,label:string,active:boolean,action:()=>void,index:number,dimmed=false)=><button key={value} type="button" aria-pressed={active} onClick={action} disabled={busy} className={'flex min-h-[54px] w-full items-center gap-3 rounded-full border-2 px-4 py-3 text-left text-sm font-semibold transition-colors duration-150 '+(active?'border-[#b90a3c] bg-white text-[#b90a3c] ring-[3px] ring-[#ffd100]':dimmed?'border-[#e1e1e5] bg-[#dedee3] text-[#74747e] hover:bg-[#f0f0f2]':'border-white bg-white text-[#b90a3c] hover:bg-[#fff0f5]')}><span className={'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold '+(active?'bg-[#ed174c] text-white':dimmed?'bg-[#c7c7ce] text-[#666672]':'bg-[#ffe5ee] text-[#b90a3c]')}>{active?<Check size={16}/>:String.fromCharCode(65+index)}</span>{label}</button>
+ const inputStyle='w-full rounded-xl border border-[#e9cad5] bg-white p-3 text-sm text-[#281727] outline-none focus:border-[#ed174c] focus:ring-2 focus:ring-[#ffd3df]'
+ return <div className="min-h-screen bg-[#fff5f8] px-3 py-7 text-[#30202a] sm:px-6 sm:py-12">
+  <div className="mx-auto w-full max-w-[440px] overflow-hidden rounded-[26px] border border-[#f3dbe3] bg-white shadow-[0_18px_65px_rgba(181,21,68,0.14)]">
+   <div className="h-4 bg-[#ed174c]"/>
+   <header className="flex h-[68px] items-center justify-between border-b border-[#f6e0e8] px-6">
     <img src="/images/indosat-wordmark.svg" alt="Indosat Ooredoo Hutchison" className="h-auto w-[112px]"/>
-    <span className="text-xs font-bold text-[#2f6bff]">Survei HiFi</span>
+    <span className="text-xs font-bold text-[#c31349]">Survei HiFi</span>
    </header>
-   {!survey?<div className="p-6"><StatusView status={status as LinkProblem}/></div>:already?<div className="p-6"><StatusView status="already_submitted"/></div>:done?<div className="px-8 py-16 text-center"><div className="mx-auto mb-7 flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f6e6] text-[#24944b]"><Check size={40} strokeWidth={3}/></div><h1 className="text-2xl font-extrabold">Jawaban terkirim!</h1><p className="mt-4 text-sm leading-7 text-[#6d7590]">{thankYou}</p>{demo&&<p className="mt-5 text-xs font-semibold text-[#2f6bff]">Mode demo: jawaban tidak tersimpan.</p>}</div>:<>
+   {!survey?<div className="p-6"><StatusView status={status as LinkProblem}/></div>:already?<div className="p-6"><StatusView status="already_submitted"/></div>:done?<div className="px-8 py-16 text-center"><div className="mx-auto mb-7 flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f6e6] text-[#24944b]"><Check size={40} strokeWidth={3}/></div><h1 className="text-2xl font-extrabold">Jawaban terkirim!</h1><p className="mt-4 text-sm leading-7 text-[#6d7590]">{thankYou}</p>{demo&&<p className="mt-5 text-xs font-semibold text-[#c31349]">Mode demo: jawaban tidak tersimpan.</p>}</div>:<>
     <div className="px-6 pb-5 pt-6">
      <div className="mb-4 flex items-center justify-between">
-      <button type="button" aria-label="Kembali" onClick={()=>{if(step>1&&!busy){setStep(1);setError('')}}} disabled={step===1||busy} className="rounded-lg p-1 text-[#2f6bff] disabled:opacity-20"><ChevronLeft size={23}/></button>
+      <button type="button" aria-label="Kembali" onClick={()=>{if(step>1&&!busy){setStep(1);setError('')}}} disabled={step===1||busy} className="rounded-lg p-1 text-[#c31349] disabled:opacity-20"><ChevronLeft size={23}/></button>
       <span className="text-base font-extrabold">{String(step).padStart(2,'0')} <span className="text-[#a7afc1]">/ {reason==='away_from_home'?'01':'02'}</span></span>
       <div className="w-7"/>
      </div>
-     <div className="flex gap-1.5">{[1,2].map(n=><div key={n} className={'h-1 flex-1 rounded-full '+(n<=step?'bg-[#2f6bff]':'bg-[#dce5fb]')}/>)}</div>
+     <div className="flex gap-1.5">{[1,2].map(n=><div key={n} className={'h-1 flex-1 rounded-full '+(n<=step?'bg-[#ed174c]':'bg-[#f7dce6]')}/>)}</div>
     </div>
     <div className="min-h-[240px] px-7 pb-9 pt-5">
      <h1 className="text-[24px] font-extrabold leading-snug tracking-tight">{step===1?'Apa alasan utama penggunaan internet Anda menurun?':reason==='network_issue'?'Mau kami bantu buat tiket gangguan?':reason==='other_provider'?'Boleh tahu provider lain yang digunakan?':reason==='no_longer_needed'?'Ingin tahu pilihan jeda tagihan sementara?':'Apa alasan lainnya?'}</h1>
@@ -72,12 +73,13 @@ export default function SurveyPage({status,token}:{status:SurveyStatus;token:str
      {step===2&&reason==='no_longer_needed'&&<div className="mt-6"><label className="text-xs font-bold">Perkiraan berapa lama tidak digunakan?<input className={'mt-1 '+inputStyle} value={answers.duration} maxLength={100} onChange={e=>set('duration',e.target.value)} placeholder="Contoh: 2 bulan"/></label></div>}
      {step===2&&reason==='other'&&<div className="mt-6"><textarea aria-label="Alasan lainnya" className={inputStyle} rows={4} maxLength={500} value={answers.other} onChange={e=>set('other',e.target.value)} placeholder="Ceritakan alasan Anda..."/><p className="mt-2 text-right text-xs text-[#7a8299]">{answers.other.length}/500</p></div>}
     </div>
-    <div className="space-y-3 bg-[#2f6bff] px-6 py-8">
-     {step===1&&REASONS.map((item,i)=>choice(item.id,item.title,false,()=>choose(item.id),i))}
-     {step===2&&reason==='network_issue'&&['Ya','Tidak'].map((v,i)=>choice(v,v==='Ya'?'Ya, bantu buat tiket':'Tidak, terima kasih',answers.ticket===v,()=>set('ticket',v),i))}
-     {step===2&&reason==='other_provider'&&<><p className="pb-1 text-sm font-bold text-white">Apakah tetap akan menggunakan HiFi?</p>{['Ya','Tidak'].map((v,i)=>choice(v,v==='Ya'?'Ya, tetap menggunakan HiFi':'Tidak, tidak melanjutkan',answers.continueHifi===v,()=>set('continueHifi',v),i))}</>}
-     {step===2&&reason==='no_longer_needed'&&<><p className="pb-1 text-sm font-bold text-white">Ingin dihubungi untuk informasi freeze tagihan?</p>{['Ya','Tidak'].map((v,i)=>choice(v,v==='Ya'?'Ya, hubungi saya':'Tidak, terima kasih',answers.freeze===v,()=>set('freeze',v),i))}</>}
-     {step===2&&reason&&<button type="button" onClick={()=>void submit(reason)} disabled={!ready||busy} className="mt-4 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#132b69] px-4 text-sm font-bold text-white transition hover:bg-[#102251] disabled:cursor-not-allowed disabled:opacity-45">{busy?<><Loader2 size={17} className="animate-spin"/>Mengirim...</>:'Kirim jawaban'}</button>}
+    <div className="space-y-3 bg-[#ed174c] px-6 py-8">
+     {step===1&&REASONS.map((item,i)=>choice(item.id,item.title,reason===item.id,()=>choose(item.id),i,reason!==null&&reason!==item.id))}
+     {step===2&&reason==='network_issue'&&['Ya','Tidak'].map((v,i)=>choice(v,v==='Ya'?'Ya, bantu buat tiket':'Tidak, terima kasih',answers.ticket===v,()=>set('ticket',v),i,Boolean(answers.ticket)&&answers.ticket!==v))}
+     {step===2&&reason==='other_provider'&&<><p className="pb-1 text-sm font-bold text-white">Apakah tetap akan menggunakan HiFi?</p>{['Ya','Tidak'].map((v,i)=>choice(v,v==='Ya'?'Ya, tetap menggunakan HiFi':'Tidak, tidak melanjutkan',answers.continueHifi===v,()=>set('continueHifi',v),i,Boolean(answers.continueHifi)&&answers.continueHifi!==v))}</>}
+     {step===2&&reason==='no_longer_needed'&&<><p className="pb-1 text-sm font-bold text-white">Ingin dihubungi untuk informasi freeze tagihan?</p>{['Ya','Tidak'].map((v,i)=>choice(v,v==='Ya'?'Ya, hubungi saya':'Tidak, terima kasih',answers.freeze===v,()=>set('freeze',v),i,Boolean(answers.freeze)&&answers.freeze!==v))}</>}
+     {step===1&&<button type="button" disabled={!reason||busy} onClick={()=>{if(!reason)return;if(reason==='away_from_home')void submit(reason);else setStep(2)}} className="mt-4 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#641634] px-4 text-sm font-bold text-white transition hover:bg-[#481026] disabled:cursor-not-allowed disabled:opacity-45">{busy?<><Loader2 size={17} className="animate-spin"/>Mengirim...</>:'Lanjutkan'}</button>}
+     {step===2&&reason&&<button type="button" onClick={()=>void submit(reason)} disabled={!ready||busy} className="mt-4 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#641634] px-4 text-sm font-bold text-white transition hover:bg-[#481026] disabled:cursor-not-allowed disabled:opacity-45">{busy?<><Loader2 size={17} className="animate-spin"/>Mengirim...</>:'Kirim jawaban'}</button>}
      {error&&<p role="alert" className="flex items-start gap-2 rounded-lg bg-white p-3 text-xs font-semibold text-red-700"><AlertCircle size={16} className="shrink-0"/>{error}</p>}
     </div>
    </>}

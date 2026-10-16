@@ -20,11 +20,11 @@ export async function POST(req:NextRequest){
  const previous=new Map<string,NonNullable<typeof data>[number]>()
  for(const r of data||[])if(!previous.has(r.customer_id))previous.set(r.customer_id,r)
  const rows:string[]=[],skipped:string[]=[];let created=0,reused=0
- for(const [id,{phone:p,name}] of set){const old=previous.get(id);if(old){if(old.phone_number!==p||old.revoked_at||Date.parse(old.expires_at)<=Date.now()||!old.token_ciphertext){skipped.push(id+': existing link cannot be re-exported');continue}try{rows.push([id,name,p,'/s/'+decrypt(old.token_ciphertext)].map(quote).join(','));reused++}catch{skipped.push(id+': cannot decrypt link')}continue}
+ for(const [id,{phone:p,name}] of set){const old=previous.get(id);if(old){if(old.phone_number!==p||old.revoked_at||Date.parse(old.expires_at)<=Date.now()||!old.token_ciphertext){skipped.push(id+': existing link cannot be re-exported');continue}try{rows.push([id,name,p,decrypt(old.token_ciphertext)].map(quote).join(','));reused++}catch{skipped.push(id+': cannot decrypt link')}continue}
  const token=randomBytes(32).toString('base64url')
  const {error:err}=await db.from('survey_invitations').insert({customer_id:id,phone_number:p,token_hash:createHash('sha256').update(token).digest('hex'),token_ciphertext:encrypt(token),expires_at:new Date(Date.now()+14*86400000).toISOString()})
- if(err){skipped.push(id+': insert failed '+err.code);continue}rows.push([id,name,p,'/s/'+token].map(quote).join(','));created++
+ if(err){skipped.push(id+': insert failed '+err.code);continue}rows.push([id,name,p,token].map(quote).join(','));created++
  }
- return NextResponse.json({csv:'\uFEFFcustomer_id,customer_name,phone_number,survey_link\r\n'+rows.join('\r\n')+'\r\n',created,reused,skipped},{headers:h})
+ return NextResponse.json({csv:'\uFEFFcustomer_id,customer_name,phone_number,survey_token\r\n'+rows.join('\r\n')+'\r\n',created,reused,skipped},{headers:h})
  }catch(e){const message=e instanceof Error?e.message:'unknown';console.error('Link generation error',message);const hint=message.includes('SURVEY_LINK_ENCRYPTION_KEY')||message==='Invalid encryption key'?'Kunci enkripsi belum valid di Cloudflare Worker.':message.startsWith('Lookup')?'Supabase menolak pembacaan undangan ('+message.replace('Lookup ','')+').':message.includes('Invalid URL')?'URL Supabase tidak valid.':'Kesalahan server. Periksa Cloudflare Observability Logs.';return NextResponse.json({error:hint},{status:500,headers:h})}
 }

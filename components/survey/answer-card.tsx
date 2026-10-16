@@ -1,12 +1,12 @@
 'use client'
 
-import { Check, Home, MessageCircle, Power, Router, Wallet, Wifi } from 'lucide-react'
+import { Check, Home, MessageCircle, Power, Router, Wifi } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { AnswerArtwork } from './answer-artwork'
 import { cn } from '@/lib/utils'
 import type { Reason, ReasonIcon, ReasonOption } from '@/lib/survey'
 
-const ICONS: Record<ReasonIcon, LucideIcon> = {wifi:Wifi,home:Home,router:Router,wallet:Wallet,power:Power,message:MessageCircle}
+const ICONS: Record<ReasonIcon, LucideIcon> = {wifi:Wifi,home:Home,router:Router,power:Power,message:MessageCircle}
 const COLORS=['bg-[#e21b3c]','bg-[#1368ce]','bg-[#d89e00]','bg-[#26890c]','bg-[#864cbf]','bg-[#e16c12]']
 const ICON_COLORS=['bg-[#ffd5df] text-[#c00835]','bg-[#d6eaff] text-[#0653ae]','bg-[#fff1be] text-[#a36900]','bg-[#d9facb] text-[#246f0b]','bg-[#edddff] text-[#6f2fab]','bg-[#ffe5cb] text-[#ad4900]']
 

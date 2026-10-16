@@ -36,6 +36,7 @@ export default function UploadPage(){
  const [logged,setLogged]=useState(false)
  const [list,setList]=useState<Customer[]>([])
  const [filename,setFilename]=useState('')
+ const [headerImageUrl,setHeaderImageUrl]=useState('')
  const [busy,setBusy]=useState(false)
  const [parsing,setParsing]=useState(false)
  const [dragging,setDragging]=useState(false)
@@ -70,7 +71,7 @@ export default function UploadPage(){
  async function generate(){
    setBusy(true);setError('');setResult('');setCsvText('');setSuccess(null)
    try{
-     const r=await fetch('/api/upload/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({customers:list})})
+     const r=await fetch('/api/upload/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({customers:list,header_image_url:headerImageUrl.trim()})})
      const d=await r.json()
      if(!r.ok)throw Error(d.error)
      setCsvText(d.csv)
@@ -139,7 +140,7 @@ export default function UploadPage(){
       </section>}
       <section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
        <div className="flex items-center justify-between border-b-[3px] border-[#241638] bg-[#e21b3c] px-5 py-4 text-white sm:px-7"><h2 className="text-xl font-black sm:text-2xl">02. Bikin link survei</h2><RefreshCw size={26}/></div>
-       <div className="p-5 sm:p-7"><p className="mb-5 text-sm font-medium text-[#6b6274]">Satu pelanggan, satu link unik. Data tersimpan otomatis di Supabase.</p><button disabled={busy||parsing||!hasFile} onClick={()=>void generate()} className="flex w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#241638] bg-[#4924ac] px-4 py-4 text-lg font-black text-white shadow-[5px_5px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_#241638] disabled:cursor-not-allowed disabled:bg-[#b5aac8] disabled:shadow-none">{busy?<><Loader2 size={20} className="animate-spin"/> Sedang membuat...</>:<>GENERATE LINK <ArrowRight size={21}/></>}</button>{!hasFile&&<p className="mt-4 text-center text-xs font-bold text-[#80768c]">Upload data dulu untuk melanjutkan.</p>}</div>
+       <div className="p-5 sm:p-7"><p className="mb-5 text-sm font-medium text-[#6b6274]">Satu pelanggan, satu link unik. Data tersimpan otomatis di Supabase.</p><label htmlFor="header-image-url" className="mb-2 block text-sm font-black">Link gambar header WhatsApp (HTTPS)</label><input id="header-image-url" type="url" inputMode="url" placeholder="https://example.com/hifi-banner.jpg" value={headerImageUrl} onChange={e=>{setHeaderImageUrl(e.target.value);setCsvText('');setSuccess(null);setError('')}} className="mb-2 h-12 w-full rounded-md border-2 border-[#241638] px-3 text-sm outline-none focus:ring-4 focus:ring-[#ffce00]"/><p className="mb-5 text-xs font-medium text-[#6b6274]">Wajib diisi. Gunakan URL publik langsung ke gambar (bukan halaman web atau Google Drive yang memerlukan login). File KATA akan memakai header_type = image dan header_text/link = URL ini.</p><button disabled={busy||parsing||!hasFile||!headerImageUrl.trim()} onClick={()=>void generate()} className="flex w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#241638] bg-[#4924ac] px-4 py-4 text-lg font-black text-white shadow-[5px_5px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_#241638] disabled:cursor-not-allowed disabled:bg-[#b5aac8] disabled:shadow-none">{busy?<><Loader2 size={20} className="animate-spin"/> Sedang membuat...</>:<>GENERATE LINK <ArrowRight size={21}/></>}</button>{!hasFile&&<p className="mt-4 text-center text-xs font-bold text-[#80768c]">Upload data dulu untuk melanjutkan.</p>}</div>
       </section>
       {success&&<section role="status" className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
        <div className="flex items-center gap-3 border-b-[3px] border-[#241638] bg-[#26890c] px-5 py-4 text-white sm:px-7"><CheckCircle2 size={26}/><h2 className="text-xl font-black">Selesai! Siap untuk KATA.</h2></div>

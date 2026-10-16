@@ -6,7 +6,7 @@ export const runtime='nodejs'
 export const dynamic='force-dynamic'
 const h={'Cache-Control':'no-store'}
 const quote=(x:string)=>'"'+(/^[=+@\-\t\r]/.test(x)?"'"+x:x).replace(/"/g,'""')+'"'
-const kataRow=(_id:string,name:string,p:string,token:string)=>['62',p.slice(2),name,'text',name,token].map(quote).join(',')
+const kataRow=(id:string,name:string,p:string,token:string)=>['62',p.slice(2),name,'text',name,id,token].map(quote).join(',')
 function phone(v:string){const d=v.replace(/\D/g,'');const p=d.startsWith('0')?'62'+d.slice(1):d.startsWith('8')?'62'+d:d;return /^628\d{8,11}$/.test(p)?p:null}
 export async function POST(req:NextRequest){
  if(!originOK(req)||!staff(req))return NextResponse.json({error:'Tidak diizinkan.'},{status:403,headers:h})
@@ -26,6 +26,6 @@ export async function POST(req:NextRequest){
  const {error:err}=await db.from('survey_invitations').insert({customer_id:id,phone_number:p,token_hash:createHash('sha256').update(token).digest('hex'),token_ciphertext:encrypt(token),expires_at:new Date(Date.now()+14*86400000).toISOString()})
  if(err){skipped.push(id+': insert failed '+err.code);continue}rows.push(kataRow(id,name,p,token));created++
  }
- return NextResponse.json({csv:'\uFEFFcountry_code,whatsapp_number,contact_name,body1_type,body1_text,survey_token\r\n'+rows.join('\r\n')+'\r\n',created,reused,skipped},{headers:h})
+ return NextResponse.json({csv:'\uFEFFcountry_code,whatsapp_number,contact_name,body1_type,body1_text,customer_id,survey_token\r\n'+rows.join('\r\n')+'\r\n',created,reused,skipped},{headers:h})
  }catch(e){const message=e instanceof Error?e.message:'unknown';console.error('Link generation error',message);const hint=message.includes('SURVEY_LINK_ENCRYPTION_KEY')||message==='Invalid encryption key'?'Kunci enkripsi belum valid di Cloudflare Worker.':message.startsWith('Lookup')?'Supabase menolak pembacaan undangan ('+message.replace('Lookup ','')+').':message.includes('Invalid URL')?'URL Supabase tidak valid.':'Kesalahan server. Periksa Cloudflare Observability Logs.';return NextResponse.json({error:hint},{status:500,headers:h})}
 }

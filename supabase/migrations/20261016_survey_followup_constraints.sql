@@ -16,7 +16,9 @@ ALTER TABLE public.survey_responses
       'Alasan Lainnya',
       'Koneksi Internet Bermasalah',
       'Sedang Jarang Berada di Rumah',
-      'Sementara Tidak Menggunakan Layanan'
+      'Sementara Tidak Menggunakan Layanan',
+      'Tidak Ada Isu',
+      'Sedang Cuti / Liburan'
     )
   );
 ALTER TABLE public.survey_responses

@@ -22,7 +22,7 @@ export default function SurveyPage({ status, token }: { status: SurveyStatus; to
   const demo = status === 'demo'
   const survey = status === 'valid' || demo
   const set = (key: keyof Answers, value: string) => { setAnswers(a => ({ ...a, [key]: value })); setError('') }
-  const direct = reason === 'no_issue'
+  const direct = reason === 'no_issue' || reason === 'other'
   const ready = reason === 'network_issue' ? !!answers.ticket : reason && freezeReasons.includes(reason) ? !!answers.freeze : reason === 'other' ? answers.other.trim().length >= 3 : false
   function notes(r: Reason) {
     if (r === 'network_issue') return 'Butuh bantuan internet: ' + answers.ticket
@@ -81,12 +81,12 @@ export default function SurveyPage({ status, token }: { status: SurveyStatus; to
           <p className="mt-2 text-[12px] leading-[1.45] text-[#7a8299]">
             {step === 1 ? 'Pilih satu jawaban yang paling sesuai dengan kondisi Anda.' : reason === 'network_issue' ? 'Tim HiFi dapat membantu melakukan pengecekan koneksi berdasarkan permintaan Anda.' : reason === 'other' ? 'Tuliskan alasan Anda secara singkat.' : 'Freeze Bill merupakan pilihan layanan bagi pelanggan tertentu sesuai ketentuan yang berlaku. Memilih Ya hanya mencatat minat untuk mendapatkan informasi; tagihan tidak otomatis dibekukan.'}
           </p>
-          {step === 2 && reason === 'other' && <div className="mt-6"><textarea aria-label="Alasan lainnya" className={inputStyle} rows={3} maxLength={500} value={answers.other} onChange={e => set('other', e.target.value)} placeholder="Ceritakan alasan Anda..." /><p className="mt-2 text-right text-xs text-[#7a8299]">{answers.other.length}/500</p></div>}
           <div className="mt-3 space-y-2 rounded-2xl bg-[#ed174c] p-3">
             {step === 1 && REASONS.map((item, i) => choice(item.id, item.title, reason === item.id, () => choose(item.id), i, reason !== null && reason !== item.id))}
+            {step === 1 && reason === 'other' && <div className="rounded-xl bg-white p-3"><label htmlFor="other-reason" className="mb-2 block text-xs font-bold text-[#30202a]">Silakan tuliskan alasan lainnya</label><textarea id="other-reason" className={inputStyle} rows={3} maxLength={500} value={answers.other} onChange={e => set('other', e.target.value)} placeholder="Ceritakan alasan Anda..." /><p className="mt-1 text-right text-xs text-[#7a8299]">{answers.other.length}/500</p></div>}
             {step === 2 && reason === 'network_issue' && ['Ya', 'Tidak'].map((v, i) => choice(v, v === 'Ya' ? 'Ya, saya butuh bantuan' : 'Tidak, terima kasih', answers.ticket === v, () => set('ticket', v), i, !!answers.ticket && answers.ticket !== v))}
             {step === 2 && reason !== null && freezeReasons.includes(reason) && ['Ya', 'Tidak'].map((v, i) => choice(v, v === 'Ya' ? 'Ya, saya ingin informasi Freeze Bill' : 'Tidak, terima kasih', answers.freeze === v, () => set('freeze', v), i, !!answers.freeze && answers.freeze !== v))}
-            {step === 1 && <button type="button" disabled={!reason || busy} onClick={() => { if (!reason) return; if (reason === 'no_issue') void submit(reason); else setStep(2) }} className="mt-2 flex min-h-[43px] w-full items-center justify-center gap-2 rounded-full bg-[#641634] px-3 text-[13px] font-bold text-white transition hover:bg-[#481026] disabled:cursor-not-allowed disabled:opacity-45">{busy ? <><Loader2 size={17} className="animate-spin" />Mengirim...</> : reason === 'no_issue' ? 'Kirim jawaban' : 'Lanjutkan'}</button>}
+            {step === 1 && <button type="button" disabled={!reason || busy || (reason === 'other' && !ready)} onClick={() => { if (!reason) return; if (reason === 'no_issue' || reason === 'other') void submit(reason); else setStep(2) }} className="mt-2 flex min-h-[43px] w-full items-center justify-center gap-2 rounded-full bg-[#641634] px-3 text-[13px] font-bold text-white transition hover:bg-[#481026] disabled:cursor-not-allowed disabled:opacity-45">{busy ? <><Loader2 size={17} className="animate-spin" />Mengirim...</> : direct ? 'Kirim jawaban' : 'Lanjutkan'}</button>}
             {step === 2 && reason && <button type="button" onClick={() => void submit(reason)} disabled={!ready || busy} className="mt-2 flex min-h-[43px] w-full items-center justify-center gap-2 rounded-full bg-[#641634] px-3 text-[13px] font-bold text-white transition hover:bg-[#481026] disabled:cursor-not-allowed disabled:opacity-45">{busy ? <><Loader2 size={17} className="animate-spin" />Mengirim...</> : 'Kirim jawaban'}</button>}
             {error && <p role="alert" className="flex items-start gap-2 rounded-lg bg-white p-3 text-xs font-semibold text-red-700"><AlertCircle size={16} className="shrink-0" />{error}</p>}
           </div>

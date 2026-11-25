@@ -151,12 +151,22 @@ export async function POST(req: NextRequest) {
    const customerMap=new Map<string,Customer>()
    for(const c of claimed.out_customers) customerMap.set(c.customer_id.trim(),{customer_id:c.customer_id.trim(),customer_name:c.customer_name.trim(),phone_number:normalizePhone(c.phone_number)!})
    const ids=[...customerMap.keys()]
-   const {data:past,error:lookupError}=await db.from('survey_invitations')
-    .select('customer_id,phone_number,token_ciphertext,expires_at,revoked_at').in('customer_id',ids)
-    .order('created_at',{ascending:false}).limit(10000)
-   if(lookupError)throw Error(lookupError.message)
-   const latest=new Map<string,NonNullable<typeof past>[number]>()
-   for(const item of past||[])if(!latest.has(item.customer_id))latest.set(item.customer_id,item)
+   // Keep each IN filter small enough for PostgREST URLs and its configured row cap.
+   const latest=new Map<string,{customer_id:string;phone_number:string;token_ciphertext:string|null;expires_at:string;revoked_at:string|null}>()
+   for(let offset=0;offset<ids.length;offset+=100){
+    const group=ids.slice(offset,offset+100)
+    let page=0
+    while(true){
+     const {data:past,error:lookupError}=await db.from('survey_invitations')
+      .select('customer_id,phone_number,token_ciphertext,expires_at,revoked_at')
+      .in('customer_id',group).order('created_at',{ascending:false})
+      .range(page*1000,page*1000+999)
+     if(lookupError)throw Error(lookupError.message)
+     for(const item of past||[])if(!latest.has(item.customer_id))latest.set(item.customer_id,item)
+     if(!past||past.length<1000)break
+     page++
+    }
+   }
    let created=0,reused=0,skipped=0
    const errors:string[]=[],rows:string[]=[]
    const fresh:{customer_id:string;phone_number:string;token_hash:string;token_ciphertext:string;expires_at:string}[]=[]

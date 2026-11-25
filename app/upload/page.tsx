@@ -94,7 +94,7 @@ export default function UploadPage(){
   <header className="border-b-[3px] border-[#241638] bg-white">
    <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
     <div className="flex items-center gap-3"><span className="inline-block -rotate-3 rounded-md bg-[#ed174c] px-3 py-1 text-2xl font-black italic tracking-tighter text-white shadow-[3px_3px_0_#241638]">HiFi!</span><span className="hidden border-l-2 border-[#241638] pl-3 text-sm font-black uppercase tracking-widest sm:inline">Survey Studio</span></div>
-    <div className="flex items-center gap-3"><span className="text-xs font-bold uppercase tracking-widest text-[#6b6274]">Internal only</span>{logged&&<button onClick={()=>void logout()} className="flex items-center gap-2 rounded-lg border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"><LogOut size={15}/> Keluar</button>}</div>
+    <div className="flex items-center gap-3"><span className="text-xs font-bold uppercase tracking-widest text-[#6b6274]">Internal only</span>{logged&&<a href="/upload/bulk" className="rounded-lg border-2 border-[#241638] bg-[#ffce00] px-3 py-2 text-xs font-black uppercase">BULK 500K</a>}{logged&&<button onClick={()=>void logout()} className="flex items-center gap-2 rounded-lg border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"><LogOut size={15}/> Keluar</button>}</div>
    </div>
   </header>
   <div className="relative overflow-hidden bg-[#4924ac] text-white">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { staff, originOK, encrypt, decrypt } from '@/lib/upload-security'
 
@@ -27,17 +28,33 @@ const validImage = (value: unknown): value is string => {
  try { const u = new URL(value); return u.protocol === 'https:' && !!u.hostname && !u.username && !u.password }
  catch { return false }
 }
+function workerAuth(req: NextRequest) {
+ let value: unknown
+ try { value = (getCloudflareContext().env as unknown as Record<string,unknown>).BULK_WORKER_TOKEN } catch {}
+ const secret = typeof value === 'string' ? value : process.env.BULK_WORKER_TOKEN
+ const received = req.headers.get('authorization')?.replace(/^Bearer /i,'') || ''
+ if (!secret || secret.length < 32 || received.length !== secret.length) return false
+ return timingSafeEqual(Buffer.from(received), Buffer.from(secret))
+}
 const validJob = (x: unknown): x is string => typeof x === 'string' && /^[a-f\d]{8}(-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(x)
 
 export async function GET(req: NextRequest) {
- if (!staff(req)) return fail('Tidak diizinkan',403)
+ const service = workerAuth(req)
+ const mode = req.nextUrl.searchParams.get('mode') || 'status'
+ if (!service && !staff(req)) return fail('Tidak diizinkan',403)
+ if (service && mode !== 'next') return fail('Action tidak diizinkan bagi worker',403)
  try {
-  const db = dbOrFail(), job = req.nextUrl.searchParams.get('job')
+  const db = dbOrFail()
+  if (mode === 'next') {
+   const {data,error}=await db.from('hifi_bulk_jobs').select('id').in('status',['ready','processing']).order('created_at',{ascending:true}).limit(1)
+   if(error)throw Error(error.message)
+   return NextResponse.json({job_id:data?.[0]?.id||null},{headers})
+  }
+  const job = req.nextUrl.searchParams.get('job')
   if (!validJob(job)) return fail('ID campaign tidak valid')
   const {data: head,error: headErr} = await db.from('hifi_bulk_jobs').select('*').eq('id',job).maybeSingle()
   if (headErr) throw Error(headErr.message)
   if (!head) return fail('Campaign tidak ditemukan',404)
-  const mode = req.nextUrl.searchParams.get('mode') || 'status'
   if (mode === 'export') {
    const part = Number(req.nextUrl.searchParams.get('part'))
    if (!Number.isInteger(part) || part < 0 || part >= Math.ceil(head.total_batches / 50)) return fail('Bagian ekspor tidak valid')
@@ -64,12 +81,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
- if (!originOK(req)||!staff(req)) return fail('Tidak diizinkan',403)
+ const service=workerAuth(req)
+ if (!service && (!originOK(req)||!staff(req))) return fail('Tidak diizinkan',403)
  try {
   if (Number(req.headers.get('content-length')||0)>2_000_000) return fail('Batch terlalu besar',413)
   const body: unknown = await req.json()
   if (!body||typeof body!=='object'||Array.isArray(body)) return fail('Request tidak valid')
   const b=body as Record<string,unknown>,db=dbOrFail()
+  if(service && b.action!=='process')return fail('Worker tidak diizinkan mengubah data upload',403)
   if (b.action==='create') {
    const total=Number(b.total),filename=String(b.filename||''),image=String(b.header_image_url||'')
    if (!Number.isInteger(total)||total<1||total>500000||filename.length>255||!filename||!validImage(image))return fail('Jumlah pelanggan, nama file, atau URL gambar tidak valid')

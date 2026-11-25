@@ -20,6 +20,7 @@ create table if not exists public.survey_upload_items (
   phone_number text not null,
   status text not null default 'pending' check (status in ('pending','ready','skipped')),
   error_reason text,
+  token_ciphertext text,
   primary key (job_id,row_number),
   unique (job_id,customer_id)
 );

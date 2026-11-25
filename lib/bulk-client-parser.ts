@@ -114,9 +114,9 @@ export async function parseBulk(file:File):Promise<BulkCustomer[]>{
  const records=name.endsWith('.csv')?await parseCsv(file):name.endsWith('.xlsx')?await parseXlsx(file):null
  if(!records)throw Error('Gunakan CSV atau XLSX')
  for(let i=0;i<records.length;i++){
-  const c=records[i],raw=c.phone_number.replace(/\\D/g,'')
+  const c=records[i],raw=c.phone_number.replace(/\D/g,'')
   const phone=raw.startsWith('0')?'62'+raw.slice(1):raw.startsWith('8')?'62'+raw:raw
-  if(!c.customer_id||c.customer_id.length>100||!c.customer_name||c.customer_name.length>150||!/^628\\d{8,11}$/.test(phone))
+  if(!c.customer_id||c.customer_id.length>100||!c.customer_name||c.customer_name.length>150||!/^628\d{8,11}$/.test(phone))
    throw Error('Customer ID, nama, atau nomor telepon tidak valid pada baris '+(i+2))
  }
  return records

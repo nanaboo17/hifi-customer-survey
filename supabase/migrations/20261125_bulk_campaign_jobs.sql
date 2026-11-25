@@ -30,6 +30,8 @@ alter table public.hifi_bulk_jobs enable row level security;
 alter table public.hifi_bulk_batches enable row level security;
 revoke all on public.hifi_bulk_jobs from anon, authenticated;
 revoke all on public.hifi_bulk_batches from anon, authenticated;
+grant select, insert, update, delete on public.hifi_bulk_jobs to service_role;
+grant select, insert, update, delete on public.hifi_bulk_batches to service_role;
 
 -- Atomically acquire a batch for one processor.
 create or replace function public.hifi_claim_bulk_batch(p_job uuid)

@@ -55,16 +55,19 @@ export async function GET(req: NextRequest) {
   const {data: head,error: headErr} = await db.from('hifi_bulk_jobs').select('*').eq('id',job).maybeSingle()
   if (headErr) throw Error(headErr.message)
   if (!head) return fail('Campaign tidak ditemukan',404)
-  if (mode === 'export') {
+  if (mode === 'export' || mode === 'errors') {
    const part = Number(req.nextUrl.searchParams.get('part'))
    if (!Number.isInteger(part) || part < 0 || part >= Math.ceil(head.total_batches / 50)) return fail('Bagian ekspor tidak valid')
    if (head.status !== 'complete') return fail('Campaign belum selesai diproses',409)
-   const {data: batches,error} = await db.from('hifi_bulk_batches').select('batch_index,csv,status')
+   const {data: batches,error} = await db.from('hifi_bulk_batches').select('batch_index,csv,status,errors')
     .eq('job_id',job).gte('batch_index',part*50).lt('batch_index',(part+1)*50).order('batch_index')
    if (error) throw Error(error.message)
    if (!batches || batches.length !== Math.min(50,head.total_batches-part*50) || batches.some(x=>x.status!=='done')) return fail('Hasil ekspor belum lengkap',409)
-   const content = '\uFEFF'+KATA_HEADER+'\r\n'+batches.map(b=>b.csv||'').filter(Boolean).join('\r\n')+'\r\n'
-   return new NextResponse(content,{headers:{'Content-Type':'text/csv; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`attachment; filename="kata_hifi_${job.slice(0,8)}_part_${String(part+1).padStart(2,'0')}.csv"`}})
+   const content = mode==='errors'
+    ? '\uFEFFbatch,reason\r\n'+batches.flatMap(b=>(Array.isArray(b.errors)?b.errors:[]).map((e:string)=>[String(b.batch_index+1),e].map(quoted).join(','))).join('\r\n')+'\r\n'
+    : '\uFEFF'+KATA_HEADER+'\r\n'+batches.map(b=>b.csv||'').filter(Boolean).join('\r\n')+'\r\n'
+   const prefix=mode==='errors'?'skipped_hifi':'kata_hifi'
+   return new NextResponse(content,{headers:{'Content-Type':'text/csv; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`attachment; filename="${prefix}_${job.slice(0,8)}_part_${String(part+1).padStart(2,'0')}.csv"`}})
   }
   const {data: batches,error} = await db.from('hifi_bulk_batches')
    .select('batch_index,status,created,reused,skipped').eq('job_id',job).order('batch_index').limit(1000)

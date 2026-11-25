@@ -15,12 +15,12 @@ async function xlsx(buffer:ArrayBuffer):Promise<string[][]>{
   const method=u16(pos+10),compressed=u32(pos+20),size=u32(pos+24),nameLength=u16(pos+28),extra=u16(pos+30),comment=u16(pos+32),offset=u32(pos+42)
   const name=decoder.decode(bytes.slice(pos+46,pos+46+nameLength));pos+=46+nameLength+extra+comment
   if(name!=='xl/sharedStrings.xml'&&!/^xl\/worksheets\/sheet\d+\.xml$/.test(name))continue
-  if(size>8000000||compressed>2000000||u32(offset)!==0x04034b50)throw Error('File Excel tidak didukung')
+  if(size>150000000||compressed>100000000||u32(offset)!==0x04034b50)throw Error('File Excel tidak didukung')
   const start=offset+30+u16(offset+26)+u16(offset+28),data=bytes.slice(start,start+compressed);let result:Uint8Array
   if(method===0)result=data
   else if(method===8){const out=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));result=new Uint8Array(await new Response(out).arrayBuffer())}
   else throw Error('Kompresi XLSX tidak didukung')
-  total+=result.length;if(total>12000000)throw Error('File Excel terlalu besar')
+  total+=result.length;if(total>200000000)throw Error('File Excel terlalu besar setelah diekstrak')
   parts.set(name,decoder.decode(result))
  }
  const parse=(x:string)=>{const doc=new DOMParser().parseFromString(x,'application/xml');if(doc.querySelector('parsererror'))throw Error('XML Excel tidak valid');return doc}
@@ -60,7 +60,7 @@ export default function UploadPage(){
    if(!file){setFilename('');return}
    setFilename(file.name);setParsing(true)
    try{
-     if(file.size>2000000)throw Error('Ukuran file maksimal 2 MB.')
+     if(file.size>100000000)throw Error('Ukuran file maksimal 100 MB.')
      const name=file.name.toLowerCase()
      const rows=name.endsWith('.csv')?csv(await file.text()):name.endsWith('.xlsx')?await xlsx(await file.arrayBuffer()):(()=>{throw Error('Gunakan file CSV atau Excel (.xlsx).')})()
      const parsed=customers(rows)
@@ -130,7 +130,7 @@ export default function UploadPage(){
          <div className="mx-auto mb-4 flex h-16 w-16 rotate-[-8deg] items-center justify-center rounded-md bg-[#4924ac] text-white shadow-[5px_5px_0_#241638]"><UploadCloud size={30}/></div>
          <p className="break-all text-xl font-black sm:text-2xl">{parsing?'Membaca file...':hasFile?filename:'Tarik file ke sini!'}</p>
          <p className="mt-2 text-sm font-medium text-[#6b6274]">{hasFile?list.length+' pelanggan terbaca. Klik untuk mengganti file.':'Atau klik untuk memilih file dari komputer'}</p>
-         <span className="mt-5 inline-block rounded-md border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black">CSV / XLSX · MAKS. 2 MB · 500 PELANGGAN</span>
+         <span className="mt-5 inline-block rounded-md border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black">CSV / XLSX · MAKS. 100 MB · 500 PELANGGAN</span>
         </div>
        </div>
       </section>

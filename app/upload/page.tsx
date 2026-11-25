@@ -1,160 +1,200 @@
 'use client'
-import {useRef,useState} from 'react'
-import {UploadCloud,FileSpreadsheet,Download,ArrowRight,LockKeyhole,LogOut,CheckCircle2,AlertCircle,Loader2,RefreshCw} from 'lucide-react'
-type Customer={customer_id:string;customer_name:string;phone_number:string}
-function csv(text:string):string[][]{const first=text.split(/\r?\n/)[0];const delimiter=first.includes(';')&&!first.includes(',')?';':',';const rows:string[][]=[];let row:string[]=[],field='',quoted=false
-for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(field);field=''}else if(c==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}else field+=c}if(row.length||field){row.push(field);rows.push(row)}return rows.filter(x=>x.some(y=>y.trim()))}
-async function xlsx(buffer:ArrayBuffer):Promise<string[][]>{
- const v=new DataView(buffer),bytes=new Uint8Array(buffer),decoder=new TextDecoder(),parts=new Map<string,string>()
- const u16=(i:number)=>v.getUint16(i,true),u32=(i:number)=>v.getUint32(i,true)
- let eocd=-1;for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--){if(u32(i)===0x06054b50){eocd=i;break}}
- if(eocd<0)throw Error('File XLSX tidak valid')
- let pos=u32(eocd+16),total=0
- for(let i=0;i<u16(eocd+10);i++){
-  if(u32(pos)!==0x02014b50)throw Error('ZIP directory tidak valid')
-  const method=u16(pos+10),compressed=u32(pos+20),size=u32(pos+24),nameLength=u16(pos+28),extra=u16(pos+30),comment=u16(pos+32),offset=u32(pos+42)
-  const name=decoder.decode(bytes.slice(pos+46,pos+46+nameLength));pos+=46+nameLength+extra+comment
-  if(name!=='xl/sharedStrings.xml'&&!/^xl\/worksheets\/sheet\d+\.xml$/.test(name))continue
-  if(size>150000000||compressed>100000000||u32(offset)!==0x04034b50)throw Error('File Excel tidak didukung')
-  const start=offset+30+u16(offset+26)+u16(offset+28),data=bytes.slice(start,start+compressed);let result:Uint8Array
-  if(method===0)result=data
-  else if(method===8){const out=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));result=new Uint8Array(await new Response(out).arrayBuffer())}
-  else throw Error('Kompresi XLSX tidak didukung')
-  total+=result.length;if(total>200000000)throw Error('File Excel terlalu besar setelah diekstrak')
-  parts.set(name,decoder.decode(result))
- }
- const parse=(x:string)=>{const doc=new DOMParser().parseFromString(x,'application/xml');if(doc.querySelector('parsererror'))throw Error('XML Excel tidak valid');return doc}
- const strings=parts.get('xl/sharedStrings.xml')?Array.from(parse(parts.get('xl/sharedStrings.xml')!).getElementsByTagName('si')).map(x=>x.textContent||''):[]
- const sheet=[...parts.keys()].filter(x=>/^xl\/worksheets\/sheet\d+\.xml$/.test(x)).sort()[0];if(!sheet)throw Error('Worksheet Excel tidak ditemukan')
- const rows=Array.from(parse(parts.get(sheet)!).getElementsByTagName('row'));if(rows.length>501)throw Error('Maksimal 500 pelanggan')
- return rows.map(r=>{const row:string[]=[];for(const c of Array.from(r.getElementsByTagName('c'))){const ref=c.getAttribute('r')?.match(/^[A-Z]+/)?.[0]||'A';let index=0;for(const char of ref)index=index*26+char.charCodeAt(0)-64;index--;if(index>30)continue;const raw=c.getElementsByTagName('v')[0]?.textContent||'';row[index]=c.getAttribute('t')==='s'?(strings[Number(raw)]||''):c.getAttribute('t')==='inlineStr'?(c.getElementsByTagName('is')[0]?.textContent||''):raw}return row})
+import { useEffect, useRef, useState } from 'react'
+import { Download, Loader2, UploadCloud, AlertCircle, CheckCircle2, PauseCircle } from 'lucide-react'
+import { parseBulk, type BulkCustomer } from '@/lib/bulk-client-parser'
+
+type Job = {id:string;file_name:string;header_image_url:string;total_customers:number;total_batches:number;status:'uploading'|'ready'|'processing'|'complete'}
+type Stats = {total:number;batches:number;uploaded:number;processed:number;created:number;reused:number;skipped:number}
+type Status = {job:Job;stats:Stats;export_parts:number}
+
+const storageKey = 'hifi_bulk_job_id'
+async function request(body:Record<string,unknown>) {
+ const r=await fetch('/api/upload/bulk',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+ const data=await r.json().catch(()=>({})) as Record<string,unknown>
+ if(!r.ok)throw Error(String(data.error||'Gagal memproses data'))
+ return data
 }
-function customers(rows:string[][]):Customer[]{if(rows.length<2)throw Error('File kosong');const h=rows[0].map(x=>x.replace(/^\uFEFF/,'').trim().toLowerCase().replace(/[\s-]+/g,'_'));const id=h.findIndex(x=>['customer_id','customerid','cust_id','id'].includes(x)),name=h.findIndex(x=>['customer_name','customername','nama_pelanggan','nama','name'].includes(x)),phone=h.findIndex(x=>['phone_number','phone','msisdn','no_hp','whatsapp'].includes(x));if(id<0||name<0||phone<0)throw Error('Kolom customer_id, customer_name, dan phone_number wajib ada');if(rows.length>501)throw Error('Maksimal 500 pelanggan');return rows.slice(1).map(x=>({customer_id:(x[id]||'').trim(),customer_name:(x[name]||'').trim(),phone_number:(x[phone]||'').trim()}))}
+async function fetchStatus(jobId:string):Promise<Status> {
+ const r=await fetch('/api/upload/bulk?job='+encodeURIComponent(jobId),{credentials:'same-origin',cache:'no-store'})
+ const data=await r.json().catch(()=>({}))
+ if(!r.ok)throw Error(data.error||'Gagal membaca campaign')
+ return data as Status
+}
+function Progress({label,value,max}:{label:string;value:number;max:number}) {
+ return <div className="space-y-2"><div className="flex justify-between gap-3 text-sm font-bold"><span>{label}</span><span>{value.toLocaleString('id-ID')} / {max.toLocaleString('id-ID')}</span></div>
+  <div className="h-3 overflow-hidden rounded-full bg-[#ece6f5]"><div className="h-full rounded-full bg-[#ed174c] transition-all" style={{width:Math.max(0,Math.min(100,max?value/max*100:0))+'%'}}/></div></div>
+}
 
 export default function UploadPage(){
- const [pass,setPass]=useState('')
  const [logged,setLogged]=useState(false)
- const [list,setList]=useState<Customer[]>([])
- const [filename,setFilename]=useState('')
- const [headerImageUrl,setHeaderImageUrl]=useState('')
- const [busy,setBusy]=useState(false)
+ const [checking,setChecking]=useState(true)
+ const [password,setPassword]=useState('')
+ const [file,setFile]=useState<File|null>(null)
+ const [rows,setRows]=useState<BulkCustomer[]>([])
  const [parsing,setParsing]=useState(false)
- const [dragging,setDragging]=useState(false)
+ const [imageUrl,setImageUrl]=useState('')
+ const [resumeId,setResumeId]=useState('')
+ const [status,setStatus]=useState<Status|null>(null)
+ const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
- const [csvText,setCsvText]=useState('')
- const [result,setResult]=useState('')
- const [success,setSuccess]=useState<{created:number;reused:number;skipped:number}|null>(null)
- const fileInput=useRef<HTMLInputElement>(null)
+ const [message,setMessage]=useState('')
+ const stop=useRef(false)
 
+ async function refresh(id?:string){
+  const key=id||status?.job.id
+  if(!key)return
+  const next=await fetchStatus(key)
+  setStatus(next)
+  setImageUrl(next.job.header_image_url)
+  return next
+ }
+ useEffect(()=>{
+  let active=true
+  ;(async()=>{
+   try {
+    const r=await fetch('/api/upload/session',{cache:'no-store'})
+    const session=await r.json()
+    if(!active)return
+    setLogged(!!session.authenticated)
+    if(session.authenticated){
+     const id=localStorage.getItem(storageKey)
+     if(id) {
+      try{const s=await fetchStatus(id);if(active){setStatus(s);setImageUrl(s.job.header_image_url)}}
+      catch{localStorage.removeItem(storageKey)}
+     }
+    }
+   }catch{if(active)setError('Tidak dapat mengecek sesi admin')}
+   finally{if(active)setChecking(false)}
+  })()
+  return()=>{active=false}
+ },[])
+ async function resumeCampaign(){
+  setError('');setMessage('')
+  try {
+   const id=resumeId.trim()
+   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Masukkan Campaign ID yang valid')
+   const next=await fetchStatus(id)
+   localStorage.setItem(storageKey,id)
+   setStatus(next);setImageUrl(next.job.header_image_url);setRows([]);setFile(null)
+   setMessage('Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan.')
+  }catch(e){setError(e instanceof Error?e.message:'Campaign tidak ditemukan')}
+ }
  async function login(){
-   setBusy(true);setError('')
-   try{
-     const r=await fetch('/api/upload/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:pass})})
-     const d=await r.json()
-     if(!r.ok)throw Error(d.error)
-     setLogged(true);setPass('')
-   }catch(e){setError(e instanceof Error?e.message:'Gagal login')}finally{setBusy(false)}
+  setBusy(true);setError('')
+  try{
+   const r=await fetch('/api/upload/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})})
+   const d=await r.json()
+   if(!r.ok)throw Error(d.error||'Password tidak valid')
+   setPassword('');setLogged(true)
+   const id=localStorage.getItem(storageKey)
+   if(id){try{await refresh(id)}catch{localStorage.removeItem(storageKey)}}
+  }catch(e){setError(e instanceof Error?e.message:'Gagal login')}finally{setBusy(false)}
  }
- async function fileChanged(file:File|undefined){
-   setList([]);setCsvText('');setError('');setResult('');setSuccess(null)
-   if(!file){setFilename('');return}
-   setFilename(file.name);setParsing(true)
-   try{
-     if(file.size>100000000)throw Error('Ukuran file maksimal 100 MB.')
-     const name=file.name.toLowerCase()
-     const rows=name.endsWith('.csv')?csv(await file.text()):name.endsWith('.xlsx')?await xlsx(await file.arrayBuffer()):(()=>{throw Error('Gunakan file CSV atau Excel (.xlsx).')})()
-     const parsed=customers(rows)
-     if(!parsed.length)throw Error('Tidak ada pelanggan dalam file.')
-     setList(parsed)
-   }catch(e){setError(e instanceof Error?e.message:'Gagal membaca file.')}finally{setParsing(false)}
+ async function selectFile(selected:File|undefined) {
+  if(!selected)return
+  setParsing(true);setError('');setMessage('');setRows([]);setFile(null)
+  try {
+   const data=await parseBulk(selected)
+   if(status?.job.status==='uploading'&&(data.length!==status.job.total_customers||selected.name!==status.job.file_name))
+    throw Error('Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru.')
+   setRows(data);setFile(selected);setMessage(data.length.toLocaleString('id-ID')+' pelanggan valid. Siap diproses.')
+  }catch(e){setError(e instanceof Error?e.message:'Gagal membaca file')}
+  finally{setParsing(false)}
  }
- async function generate(){
-   setBusy(true);setError('');setResult('');setCsvText('');setSuccess(null)
-   try{
-     const r=await fetch('/api/upload/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({customers:list,header_image_url:headerImageUrl.trim()})})
-     const d=await r.json()
-     if(!r.ok)throw Error(d.error)
-     setCsvText(d.csv)
-     setSuccess({created:d.created,reused:d.reused,skipped:d.skipped.length})
-     setResult(d.skipped.length?d.skipped.slice(0,10).join('; '):'')
-   }catch(e){setError(e instanceof Error?e.message:'Gagal membuat link.')}finally{setBusy(false)}
+ async function run(){
+  if(busy)return
+  stop.current=false;setBusy(true);setError('');setMessage('')
+  try {
+   let s=status,jobId=s?.job.id
+   if(!jobId){
+    if(!file||!rows.length)throw Error('Pilih file terlebih dahulu')
+    if(!/^https:\/\/[^\s]+$/.test(imageUrl))throw Error('Masukkan URL gambar header HTTPS')
+    const created=await request({action:'create',filename:file.name,total:rows.length,header_image_url:imageUrl})
+    jobId=String(created.job_id)
+    localStorage.setItem(storageKey,jobId)
+    s=await fetchStatus(jobId);setStatus(s)
+   }
+   if(!s)throw Error('Campaign belum siap')
+   if(s.job.status==='uploading'){
+    if(!rows.length||!file)throw Error('Pilih ulang file awal untuk melanjutkan upload')
+    if(rows.length!==s.job.total_customers||file.name!==s.job.file_name)throw Error('File berbeda dari campaign yang tersimpan')
+    for(let i=0;i<s.job.total_batches;i++){
+     if(stop.current){setMessage('Dihentikan. Progress tersimpan; bisa dilanjutkan.');return}
+     await request({action:'append',job_id:jobId,index:i,customers:rows.slice(i*500,(i+1)*500)})
+     if((i+1)%10===0||i===s.job.total_batches-1){
+      s=await fetchStatus(jobId);setStatus(s)
+     }
+    }
+    await request({action:'finish',job_id:jobId})
+    s=await fetchStatus(jobId);setStatus(s)
+    setRows([]);setFile(null)
+   }
+   if(s.job.status!=='complete'){
+    // Each request claims and processes one durable batch; safe to resume after network interruption.
+    let waiting=0
+    while(!stop.current){
+     const output=await request({action:'process',job_id:jobId})
+     if(output.complete){s=await fetchStatus(jobId);setStatus(s);break}
+     if(output.busy){
+      waiting++
+      if(waiting>=4){s=await fetchStatus(jobId);setStatus(s);setMessage('Ada batch yang sedang diproses. Coba lanjutkan kembali sebentar lagi.');break}
+      await new Promise(resolve=>setTimeout(resolve,1000))
+     }else waiting=0
+     if(output.processed||waiting){s=await fetchStatus(jobId);setStatus(s)}
+     if(s.job.status==='complete')break
+    }
+   }
+   if(stop.current)setMessage('Proses dihentikan sementara. Klik Lanjutkan untuk memproses sisa batch.')
+   else if(s?.job.status==='complete')setMessage('Selesai! Unduh semua bagian CSV untuk diunggah ke KATA.')
+  }catch(e){setError(e instanceof Error?e.message:'Gagal memproses. Progress sudah tersimpan; silakan coba kembali.')}
+  finally{setBusy(false)}
  }
- function download(name:string,content:string){
-   const u=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}))
-   const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove()
-   setTimeout(()=>URL.revokeObjectURL(u),5000)
+ function newCampaign(){
+  if(busy)return
+  stop.current=true;localStorage.removeItem(storageKey);setStatus(null);setFile(null);setRows([]);setImageUrl('');setError('');setMessage('')
  }
- async function logout(){
-   await fetch('/api/upload/logout',{method:'POST'})
-   setLogged(false);setCsvText('');setList([]);setFilename('');setError('');setSuccess(null)
- }
- const hasFile=list.length>0
- const step=success?3:hasFile?2:1
- return <main className="min-h-screen bg-[#f5f2ec] text-[#241638]">
-  <header className="border-b-[3px] border-[#241638] bg-white">
-   <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-    <div className="flex items-center gap-3"><span className="inline-block -rotate-3 rounded-md bg-[#ed174c] px-3 py-1 text-2xl font-black italic tracking-tighter text-white shadow-[3px_3px_0_#241638]">HiFi!</span><span className="hidden border-l-2 border-[#241638] pl-3 text-sm font-black uppercase tracking-widest sm:inline">Survey Studio</span></div>
-    <div className="flex items-center gap-3"><span className="text-xs font-bold uppercase tracking-widest text-[#6b6274]">Internal only</span>{logged&&<a href="/upload/bulk" className="rounded-lg border-2 border-[#241638] bg-[#ffce00] px-3 py-2 text-xs font-black uppercase">BULK 500K</a>}{logged&&<button onClick={()=>void logout()} className="flex items-center gap-2 rounded-lg border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"><LogOut size={15}/> Keluar</button>}</div>
-   </div>
-  </header>
-  <div className="relative overflow-hidden bg-[#4924ac] text-white">
-   <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rotate-12 rounded-[4rem] border-[24px] border-[#ffce00] opacity-90"/>
-   <div aria-hidden="true" className="pointer-events-none absolute bottom-[-68px] left-[-55px] h-48 w-48 rotate-45 bg-[#e21b3c]"/>
-   <div aria-hidden="true" className="pointer-events-none absolute right-[18%] bottom-[-85px] h-48 w-48 rounded-full bg-[#26890c]"/>
-   <div className="relative mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
-    <p className="mb-4 inline-block -rotate-2 bg-[#ffce00] px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#241638]">Link generator / HiFi</p>
-    <h1 className="max-w-3xl text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">Satu file.<br/><span className="text-[#ffce00]">Banyak link.</span><br/>Langsung kirim.</h1>
-    <p className="mt-5 max-w-xl text-base font-medium leading-relaxed text-white/85">Upload daftar pelanggan, buat link survei unik, lalu ekspor file untuk KATA. Selesai dalam tiga langkah.</p>
-   </div>
-  </div>
-  <div className="mx-auto max-w-6xl px-5 pb-20 pt-8 sm:px-8">
-   {!logged?<section className="mx-auto max-w-md border-[3px] border-[#241638] bg-white p-7 shadow-[8px_8px_0_#241638] sm:p-10">
-    <div className="mb-5 flex h-14 w-14 rotate-[-8deg] items-center justify-center bg-[#ffce00] text-[#241638]"><LockKeyhole size={28}/></div>
-    <h2 className="text-3xl font-black">Halo, petugas!</h2>
-    <p className="mt-2 text-sm font-medium text-[#6b6274]">Masukkan password untuk masuk ke generator link.</p>
-    <form onSubmit={e=>{e.preventDefault();void login()}} className="mt-6 space-y-4">
-     <div><label htmlFor="pwd" className="mb-2 block text-sm font-black">Password</label><input id="pwd" type="password" autoComplete="current-password" placeholder="Password petugas" value={pass} onChange={e=>setPass(e.target.value)} className="h-12 w-full rounded-md border-2 border-[#241638] px-3 text-base outline-none focus:ring-4 focus:ring-[#ffce00]"/></div>
-     <button disabled={busy||!pass} type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-md border-2 border-[#241638] bg-[#26890c] font-black text-white shadow-[4px_4px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-40">{busy?<><Loader2 size={18} className="animate-spin"/> Memeriksa...</>:<>Masuk <ArrowRight size={18}/></>}</button>
-    </form>
-    {error&&<p role="alert" className="mt-5 border-l-4 border-[#e21b3c] bg-[#ffe7ec] p-3 text-sm font-bold">{error}</p>}
-   </section>:<>
-    <div className="mb-8 flex flex-wrap items-center gap-3">{[{n:1,label:'UPLOAD'},{n:2,label:'GENERATE'},{n:3,label:'DOWNLOAD'}].map(s=><div key={s.n} className={'flex items-center gap-2 rounded-md border-2 border-[#241638] px-4 py-3 text-xs font-black tracking-widest shadow-[3px_3px_0_#241638] sm:text-sm '+(step===s.n?'bg-[#ffce00]':'bg-white')}>{step>s.n?<CheckCircle2 size={18}/>:<span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#241638] text-white">{s.n}</span>}{s.label}</div>)}</div>
-    <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_310px]">
-     <div className="space-y-7">
-      <section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
-       <div className="flex items-center justify-between gap-3 border-b-[3px] border-[#241638] bg-[#ffce00] px-5 py-4 sm:px-7"><h2 className="text-xl font-black sm:text-2xl">01. Upload pelanggan</h2><FileSpreadsheet size={28}/></div>
-       <div className="p-5 sm:p-7">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="max-w-sm text-sm font-medium text-[#6b6274]">Masukkan data pelanggan dengan kolom customer_id, customer_name, dan phone_number.</p><button onClick={()=>download('template_hifi_survey.csv','customer_id,customer_name,phone_number\r\nDEMO00001,Budi Santoso,6281200000101\r\nDEMO00002,Siti Aminah,6281300000102\r\n')} className="flex shrink-0 items-center gap-2 rounded-md border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black shadow-[3px_3px_0_#241638] hover:bg-[#ffce00]"><Download size={15}/> UNDUH TEMPLATE</button></div>
-        <input ref={fileInput} id="upload" type="file" accept=".csv,.xlsx" className="sr-only" onChange={e=>void fileChanged(e.target.files?.[0])}/>
-        <div role="button" tabIndex={0} onClick={()=>fileInput.current?.click()} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.current?.click()}}} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);void fileChanged(e.dataTransfer.files[0])}} className={'group cursor-pointer border-[3px] border-dashed p-8 text-center transition focus:outline-none focus:ring-4 focus:ring-[#ffce00] sm:p-11 '+(dragging?'border-[#4924ac] bg-[#ebe3ff]':hasFile?'border-[#26890c] bg-[#effce9]':'border-[#988ca7] bg-[#f8f5ff] hover:border-[#4924ac] hover:bg-[#eee6ff]')}>
-         <div className="mx-auto mb-4 flex h-16 w-16 rotate-[-8deg] items-center justify-center rounded-md bg-[#4924ac] text-white shadow-[5px_5px_0_#241638]"><UploadCloud size={30}/></div>
-         <p className="break-all text-xl font-black sm:text-2xl">{parsing?'Membaca file...':hasFile?filename:'Tarik file ke sini!'}</p>
-         <p className="mt-2 text-sm font-medium text-[#6b6274]">{hasFile?list.length+' pelanggan terbaca. Klik untuk mengganti file.':'Atau klik untuk memilih file dari komputer'}</p>
-         <span className="mt-5 inline-block rounded-md border-2 border-[#241638] bg-white px-3 py-2 text-xs font-black">CSV / XLSX · MAKS. 100 MB · 500 PELANGGAN</span>
-        </div>
-       </div>
-      </section>
-      {hasFile&&<section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
-       <div className="flex items-center justify-between border-b-[3px] border-[#241638] bg-[#1368ce] px-5 py-4 text-white sm:px-7"><h2 className="text-xl font-black">Cek dulu datanya!</h2><span className="rounded-md bg-white px-3 py-1 text-xs font-black text-[#241638]">{list.length} PELANGGAN</span></div>
-       <div className="p-5 sm:p-7"><div className="max-h-64 overflow-auto border-2 border-[#241638]"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-[#eae6f3]"><tr><th className="px-4 py-3 font-black">Customer ID</th><th className="px-4 py-3 font-black">Customer name</th><th className="px-4 py-3 font-black">Phone number</th></tr></thead><tbody>{list.slice(0,10).map((c,i)=><tr key={i} className="border-t border-[#eae6f3]"><td className="px-4 py-3 font-bold">{c.customer_id}</td><td className="px-4 py-3">{c.customer_name}</td><td className="px-4 py-3">{c.phone_number}</td></tr>)}</tbody></table></div>{list.length>10&&<p className="mt-3 text-xs font-medium text-[#6b6274]">Preview 10 dari {list.length} pelanggan.</p>}</div>
-      </section>}
-      <section className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
-       <div className="flex items-center justify-between border-b-[3px] border-[#241638] bg-[#e21b3c] px-5 py-4 text-white sm:px-7"><h2 className="text-xl font-black sm:text-2xl">02. Bikin link survei</h2><RefreshCw size={26}/></div>
-       <div className="p-5 sm:p-7"><p className="mb-5 text-sm font-medium text-[#6b6274]">Satu pelanggan, satu link unik. Data tersimpan otomatis di Supabase.</p><label htmlFor="header-image-url" className="mb-2 block text-sm font-black">Link gambar header WhatsApp (HTTPS)</label><input id="header-image-url" type="url" inputMode="url" placeholder="https://example.com/hifi-banner.jpg" value={headerImageUrl} onChange={e=>{setHeaderImageUrl(e.target.value);setCsvText('');setSuccess(null);setError('')}} className="mb-2 h-12 w-full rounded-md border-2 border-[#241638] px-3 text-sm outline-none focus:ring-4 focus:ring-[#ffce00]"/><p className="mb-5 text-xs font-medium text-[#6b6274]">Wajib diisi. Gunakan URL publik langsung ke gambar (bukan halaman web atau Google Drive yang memerlukan login). File KATA akan memakai header_type = image dan header_text/link = URL ini.</p><button disabled={busy||parsing||!hasFile||!headerImageUrl.trim()} onClick={()=>void generate()} className="flex w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#241638] bg-[#4924ac] px-4 py-4 text-lg font-black text-white shadow-[5px_5px_0_#241638] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_#241638] disabled:cursor-not-allowed disabled:bg-[#b5aac8] disabled:shadow-none">{busy?<><Loader2 size={20} className="animate-spin"/> Sedang membuat...</>:<>GENERATE LINK <ArrowRight size={21}/></>}</button>{!hasFile&&<p className="mt-4 text-center text-xs font-bold text-[#80768c]">Upload data dulu untuk melanjutkan.</p>}</div>
-      </section>
-      {success&&<section role="status" className="border-[3px] border-[#241638] bg-white shadow-[7px_7px_0_#241638]">
-       <div className="flex items-center gap-3 border-b-[3px] border-[#241638] bg-[#26890c] px-5 py-4 text-white sm:px-7"><CheckCircle2 size={26}/><h2 className="text-xl font-black">Selesai! Siap untuk KATA.</h2></div>
-       <div className="p-5 sm:p-7"><div className="grid grid-cols-3 gap-3">{[{n:success.created,l:'LINK BARU',color:'bg-[#ffce00]'},{n:success.reused,l:'DIPAKAI LAGI',color:'bg-[#b8dcff]'},{n:success.skipped,l:'DILEWATI',color:'bg-[#ffd2da]'}].map(x=><div key={x.l} className={'border-2 border-[#241638] p-3 text-center '+x.color}><p className="text-3xl font-black">{x.n}</p><p className="mt-1 text-[10px] font-black tracking-wide">{x.l}</p></div>)}</div><button disabled={!csvText} onClick={()=>download('kata_survey_links.csv',csvText)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border-[3px] border-[#241638] bg-[#26890c] px-4 py-4 text-lg font-black text-white shadow-[5px_5px_0_#241638] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"><Download size={22}/> DOWNLOAD CSV UNTUK KATA</button>{result&&<p className="mt-4 border-l-4 border-[#ffce00] bg-[#fff5c9] p-3 text-sm font-semibold">{result}</p>}</div>
-      </section>}
-      {error&&<p role="alert" className="border-[3px] border-[#e21b3c] bg-[#ffe8ec] p-4 text-sm font-bold text-[#8c1030]"><AlertCircle className="mr-2 inline" size={20}/>{error}</p>}
-     </div>
-     <aside className="space-y-6">
-      <div className="border-[3px] border-[#241638] bg-[#ffce00] p-6 shadow-[6px_6px_0_#241638]"><p className="text-xs font-black tracking-[0.15em]">HOW TO PLAY</p><h3 className="mt-2 text-3xl font-black">3 langkah. Beres!</h3><div className="mt-6 space-y-5">{[{n:'1',t:'Upload',d:'Masukkan CSV atau XLSX.'},{n:'2',t:'Generate',d:'Buat URL unik otomatis.'},{n:'3',t:'Kirim',d:'Ekspor CSV untuk KATA.'}].map(x=><div key={x.n} className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#241638] bg-white text-lg font-black">{x.n}</span><div><p className="text-base font-black">{x.t}</p><p className="text-xs font-medium">{x.d}</p></div></div>)}</div></div>
-      <div className="rotate-1 border-[3px] border-[#241638] bg-[#1368ce] p-6 text-white shadow-[6px_6px_0_#241638]"><p className="text-3xl">✦</p><h3 className="mt-2 text-xl font-black">Link pribadi</h3><p className="mt-2 text-sm font-medium leading-relaxed">Link survei dibuat unik untuk setiap pelanggan, tanpa menampilkan nomor telepon di URL.</p></div>
-     </aside>
-    </div>
-   </>}
-   <footer className="mt-14 border-t-2 border-[#241638] pt-5 text-xs font-bold uppercase tracking-wide text-[#80768c]">HiFi Survey Studio · Internal tool</footer>
+ const uploaded=status?.stats.uploaded||0,processed=status?.stats.processed||0,total=status?.job.total_batches||0
+ const percent=total?Math.round(processed/total*100):0
+ return <main className="min-h-screen bg-[#f7f3f7] px-4 py-8 text-[#28152e]">
+  <div className="mx-auto max-w-3xl space-y-6">
+   <div className="rounded-2xl bg-[#ed174c] p-6 text-white sm:p-8"><p className="text-xs font-bold tracking-widest">HIFI SURVEY STUDIO</p><h1 className="mt-2 text-3xl font-black">Upload Pelanggan</h1><p className="mt-2 text-sm">Upload pelanggan hingga 500.000 dalam satu halaman · CSV/XLSX maksimal 100 MB · pemrosesan otomatis per 500 pelanggan</p></div>
+   {checking?<p>Memeriksa sesi admin...</p>:!logged?
+    <form onSubmit={e=>{e.preventDefault();void login()}} className="rounded-xl bg-white p-6 shadow-sm">
+     <h2 className="mb-3 text-lg font-bold">Login Admin</h2>
+     <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password admin" className="w-full rounded-lg border p-3"/>
+     <button disabled={busy} className="mt-3 w-full rounded-lg bg-[#ed174c] px-4 py-3 font-bold text-white">Masuk</button>
+    </form>:
+    <>
+     <section className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">1. Campaign</h2>{status&&<div className="flex gap-2"><button onClick={()=>void refresh().catch(e=>setError(e instanceof Error?e.message:"Gagal refresh"))} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">Refresh</button><button onClick={newCampaign} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">Campaign baru</button></div>}</div>
+      {status?<div className="space-y-1 text-sm"><p><strong>Nama file:</strong> {status.job.file_name}</p><p><strong>Campaign ID:</strong> <span className="break-all">{status.job.id}</span></p><p><strong>Status:</strong> {status.job.status}</p></div>:
+       <p className="text-sm text-[#746a76]">Unggah satu file untuk membuat campaign baru. Semua batch disimpan di Supabase agar dapat dilanjutkan setelah refresh.</p>}
+      {(status?.job.status==='uploading'||!status)&&<>
+       <label className="block cursor-pointer rounded-xl border-2 border-dashed border-[#cebdca] bg-[#fdf9fc] px-5 py-8 text-center">
+        <UploadCloud className="mx-auto mb-3" size={32}/>
+        <span className="block text-sm font-bold">{parsing?'Membaca file...':file?file.name:'Pilih file CSV / XLSX hingga 100 MB'}</span>
+        <span className="mt-2 block text-xs text-[#827687]">Untuk 500.000 baris, CSV lebih ringan dan disarankan menggunakan desktop.</span>
+        <input type="file" accept=".csv,.xlsx" className="sr-only" disabled={parsing||busy} onChange={e=>void selectFile(e.target.files?.[0])}/>
+       </label>
+       <p className="text-sm font-semibold">{rows.length?rows.length.toLocaleString('id-ID')+' pelanggan siap diproses':''}</p>
+      </>}
+      {!status&&<div className="rounded-lg border border-[#e7dce7] bg-[#fcf9fc] p-3"><label htmlFor="resume-id" className="mb-2 block text-sm font-bold">Sudah punya Campaign ID?</label><div className="flex flex-wrap gap-2"><input id="resume-id" value={resumeId} onChange={e=>setResumeId(e.target.value)} placeholder="Masukkan Campaign ID untuk resume" className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"/><button type="button" onClick={()=>void resumeCampaign()} className="rounded-lg bg-[#4924ac] px-3 py-2 text-sm font-semibold text-white">Buka campaign</button></div></div>}
+      {!status&&<div><label htmlFor="bulk-image" className="mb-1 block text-sm font-bold">URL gambar header KATA (HTTPS)</label><input id="bulk-image" type="url" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} placeholder="https://example.com/hifi-banner.jpg" className="w-full rounded-lg border p-3 text-sm"/></div>}
+     </section>
+     <section className="space-y-5 rounded-xl bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-bold">2. Upload &amp; Generate Link</h2>
+      {status&&<><Progress label="Batch data tersimpan" value={uploaded} max={total}/><Progress label="Batch diproses" value={processed} max={total}/>
+       <div className="grid grid-cols-3 gap-2 text-center text-sm"><div className="rounded-lg bg-[#f2f5ff] p-3"><strong className="block text-xl">{status.stats.created.toLocaleString('id-ID')}</strong>Link baru</div><div className="rounded-lg bg-[#f2f5ff] p-3"><strong className="block text-xl">{status.stats.reused.toLocaleString('id-ID')}</strong>Digunakan lagi</div><div className="rounded-lg bg-[#fff3f3] p-3"><strong className="block text-xl">{status.stats.skipped.toLocaleString('id-ID')}</strong>Dilewati</div></div>
+       <p className="text-sm text-[#706577]">{percent}% selesai · Progres tersimpan di database</p>
+      </>}
+      {status?.job.status!=='complete'&&<div className="flex gap-3"><button onClick={()=>void run()} disabled={busy?true:!status&&(!file||!rows.length||!imageUrl.trim())} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#ed174c] px-4 py-3 font-bold text-white disabled:opacity-40">{busy?<><Loader2 className="animate-spin" size={19}/>Memproses...</>:status?'Lanjutkan proses':'Mulai campaign'}</button>{busy&&<button onClick={()=>{stop.current=true}} className="flex items-center gap-1 rounded-xl border px-3 py-2 font-semibold"><PauseCircle size={17}/>Jeda</button>}</div>}
+      <p className="text-xs text-[#756978]">Proses berjalan selama halaman terbuka; Anda dapat menjeda atau melanjutkan campaign dengan ID tersimpan. Untuk pemrosesan tanpa browser terbuka, diperlukan worker terjadwal tambahan.</p>
+     </section>
+     {status?.job.status==='complete'&&<section className="rounded-xl bg-white p-6 shadow-sm"><h2 className="mb-3 text-xl font-bold">3. Download CSV KATA</h2><p className="mb-4 text-sm">Unduh {status.export_parts} bagian CSV, masing-masing hingga 25.000 pelanggan. File berisi header dan token website CTA untuk KATA.</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({length:status.export_parts},(_,i)=><a key={i} className="flex items-center justify-center gap-2 rounded-lg border border-[#ed174c] px-3 py-3 text-sm font-bold text-[#ad1244]" href={'/api/upload/bulk?mode=export&job='+status.job.id+'&part='+i} download><Download size={16}/>Part {i+1}</a>)}</div>{status.stats.skipped>0&&<div className="mt-5"><p className="mb-3 text-sm font-bold text-[#8d2636]">Pelanggan dilewati — unduh laporan alasan:</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Array.from({length:status.export_parts},(_,i)=><a key={i} className="rounded-lg bg-[#fff0f0] px-3 py-2 text-center text-xs font-bold text-[#962735]" href={'/api/upload/bulk?mode=errors&job='+status.job.id+'&part='+i} download>Errors Part {i+1}</a>)}</div></div>}</section>}
+    </>
+   }
+   {error&&<p role="alert" className="flex items-start gap-2 rounded-lg bg-[#ffe7e7] p-4 text-sm font-semibold text-[#a22235]"><AlertCircle size={18}/>{error}</p>}
+   {message&&<p role="status" className="flex items-start gap-2 rounded-lg bg-[#eff8f0] p-4 text-sm font-semibold text-[#266c37]"><CheckCircle2 size={18}/>{message}</p>}
   </div>
  </main>
 }

@@ -24,11 +24,13 @@ async function parseCsv(file:File):Promise<BulkCustomer[]> {
  const reader=file.stream().getReader(),decoder=new TextDecoder()
  const customers:BulkCustomer[]=[], seen=new Set<string>()
  let header:{id:number;name:number;phone:number}|null=null
- let field='',row:string[]=[],quoted=false,first=true,delimiter=',',pendingQuote=false,previousCR=false
+ const headerLine=(await file.slice(0,4096).text()).split(/\r?\n/,1)[0]
+ const delimiter=headerLine.split(';').length>headerLine.split(',').length?';':','
+ let field='',row:string[]=[],quoted=false,first=true,pendingQuote=false,previousCR=false
  const finishRow=()=>{
   if(!row.length&&!field)return
   row.push(field);field=''
-  if(!header){delimiter=delimiter;header=normalize(row);row=[];return}
+  if(!header){header=normalize(row);row=[];return}
   if(row.every(x=>!x.trim())){row=[];return}
   const id=(row[header.id]||'').trim(),name=(row[header.name]||'').trim(),phone=(row[header.phone]||'').trim()
   if(!id||!name||!phone)throw Error('Kolom kosong pada baris '+(customers.length+2))
@@ -47,7 +49,6 @@ async function parseCsv(file:File):Promise<BulkCustomer[]> {
    const c=input[i]
    if(first){first=false;if(c==='\uFEFF')continue}
    if(previousCR){previousCR=false;if(c==='\n')continue}
-   if(!header && row.length===0 && !quoted && field.length===0 && (c===';'||c===',')){delimiter=c;row.push('');continue}
    if(quoted){
     if(pendingQuote){
      pendingQuote=false
@@ -104,7 +105,7 @@ async function parseXlsx(file:File):Promise<BulkCustomer[]>{
   }return row
  })
  const customers=mapped(rows),seen=new Set<string>()
- for(const c of customers){if(seen.has(c.customer_id))throw Error('Customer ID duplikat: '+c.customer_id);seen.add(c.customer_id)}
+ for(const c of customers){if(!c.customer_id||!c.customer_name||!c.phone_number)throw Error('Baris dengan data pelanggan tidak lengkap');if(seen.has(c.customer_id))throw Error('Customer ID duplikat: '+c.customer_id);seen.add(c.customer_id)}
  return customers
 }
 export async function parseBulk(file:File):Promise<BulkCustomer[]>{

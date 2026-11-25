@@ -1,7 +1,7 @@
 # HiFi bulk campaign (up to 500,000 customers)
 
 ## Workflow
-At /upload/bulk, staff upload CSV or XLSX (up to 100 MB) with customer_id, customer_name and phone_number.
+At /upload, staff upload CSV or XLSX (up to 100 MB) with customer_id, customer_name and phone_number.
 The browser validates up to 500,000 distinct IDs and stages 500-row batches in Supabase.
 Each processing request claims a durable batch, creates/reuses per-customer invitations, and stores its KATA-ready CSV lines.
 Job status, processed counters and up to 25,000-row KATA CSV exports remain accessible after a browser refresh.
@@ -18,7 +18,7 @@ Job status, processed counters and up to 25,000-row KATA CSV exports remain acce
    Deploy after the main survey Worker is running. The scheduled worker runs once per minute and processes up to 10 batches per invocation.
 
 ## Usage
-- Log into /upload and click BULK 500K; alternatively go to /upload/bulk and log in.
+- Open /upload and log in.
 - Upload the file, provide the public direct HTTPS image header URL, start.
 - Upload staging is performed in the browser; keep that tab open until all input batches have been stored.
 - Once uploaded, processing can run via the browser or the optional Cron Worker with the tab closed.

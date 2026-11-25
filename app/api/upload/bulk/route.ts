@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
    if (!batches || batches.length !== Math.min(50,head.total_batches-part*50) || batches.some(x=>x.status!=='done')) return fail('Hasil ekspor belum lengkap',409)
    const content = mode==='errors'
     ? '\uFEFFbatch,reason\r\n'+batches.flatMap(b=>(Array.isArray(b.errors)?b.errors:[]).map((e:string)=>[String(b.batch_index+1),e].map(quoted).join(','))).join('\r\n')+'\r\n'
-    : '\uFEFF'+KATA_HEADER+'\r\n'+batches.map(b=>b.csv||'').filter(Boolean).join('\r\n')+'\r\n'
+    : '\uFEFF'+KATA_HEADER+'\r\n'+batches.map(b=>b.csv?decrypt(b.csv):'').filter(Boolean).join('\r\n')+'\r\n'
    const prefix=mode==='errors'?'skipped_hifi':'kata_hifi'
    return new NextResponse(content,{headers:{'Content-Type':'text/csv; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`attachment; filename="${prefix}_${job.slice(0,8)}_part_${String(part+1).padStart(2,'0')}.csv"`}})
   }
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
     }
    }
    const {error:saveError}=await db.from('hifi_bulk_batches')
-    .update({status:'done',csv:rows.join('\r\n'),created,reused,skipped,errors,completed_at:new Date().toISOString()})
+    .update({status:'done',csv:encrypt(rows.join('\r\n')),created,reused,skipped,errors,completed_at:new Date().toISOString()})
     .eq('job_id',jobId).eq('batch_index',idx)
    if(saveError)throw Error(saveError.message)
    await db.from('hifi_bulk_jobs').update({status:'processing',updated_at:new Date().toISOString()}).eq('id',jobId).neq('status','complete')

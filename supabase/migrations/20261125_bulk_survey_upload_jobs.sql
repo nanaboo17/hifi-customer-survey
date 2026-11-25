@@ -4,6 +4,8 @@ create table if not exists public.survey_upload_jobs (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
   header_image_url text not null,
+  file_name text not null,
+  file_size bigint not null,
   total_rows integer not null check (total_rows between 1 and 500000),
   uploaded_rows integer not null default 0 check (uploaded_rows >= 0),
   processed_rows integer not null default 0 check (processed_rows >= 0),

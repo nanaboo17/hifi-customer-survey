@@ -33,6 +33,7 @@ export default function BulkUploadPage(){
  const [rows,setRows]=useState<BulkCustomer[]>([])
  const [parsing,setParsing]=useState(false)
  const [imageUrl,setImageUrl]=useState('')
+ const [resumeId,setResumeId]=useState('')
  const [status,setStatus]=useState<Status|null>(null)
  const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
@@ -67,6 +68,17 @@ export default function BulkUploadPage(){
   })()
   return()=>{active=false}
  },[])
+ async function resumeCampaign(){
+  setError('');setMessage('')
+  try {
+   const id=resumeId.trim()
+   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Masukkan Campaign ID yang valid')
+   const next=await fetchStatus(id)
+   localStorage.setItem(storageKey,id)
+   setStatus(next);setImageUrl(next.job.header_image_url);setRows([]);setFile(null)
+   setMessage('Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan.')
+  }catch(e){setError(e instanceof Error?e.message:'Campaign tidak ditemukan')}
+ }
  async function login(){
   setBusy(true);setError('')
   try{
@@ -167,6 +179,7 @@ export default function BulkUploadPage(){
        </label>
        <p className="text-sm font-semibold">{rows.length?rows.length.toLocaleString('id-ID')+' pelanggan siap diproses':''}</p>
       </>}
+      {!status&&<div className="rounded-lg border border-[#e7dce7] bg-[#fcf9fc] p-3"><label htmlFor="resume-id" className="mb-2 block text-sm font-bold">Sudah punya Campaign ID?</label><div className="flex flex-wrap gap-2"><input id="resume-id" value={resumeId} onChange={e=>setResumeId(e.target.value)} placeholder="Masukkan Campaign ID untuk resume" className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"/><button type="button" onClick={()=>void resumeCampaign()} className="rounded-lg bg-[#4924ac] px-3 py-2 text-sm font-semibold text-white">Buka campaign</button></div></div>}
       {!status&&<div><label htmlFor="bulk-image" className="mb-1 block text-sm font-bold">URL gambar header KATA (HTTPS)</label><input id="bulk-image" type="url" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} placeholder="https://example.com/hifi-banner.jpg" className="w-full rounded-lg border p-3 text-sm"/></div>}
      </section>
      <section className="space-y-5 rounded-xl bg-white p-6 shadow-sm">

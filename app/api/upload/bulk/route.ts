@@ -208,5 +208,15 @@ export async function POST(req: NextRequest) {
    await db.from('hifi_bulk_batches').update({status:'queued',processing_started_at:null}).eq('job_id',jobId).eq('batch_index',idx).eq('status','processing')
    return fail('Batch '+(idx+1)+' gagal. Bisa dicoba lagi. Periksa Cloudflare logs.',500)
   }
- } catch(e){console.error('Bulk campaign request',e);return fail('Gagal memproses campaign. Pastikan migrasi SQL sudah dijalankan.',500)}
+ } catch(e){
+  console.error('Bulk campaign request',e)
+  const detail=e instanceof Error?e.message:String(e)
+  if(/PGRST205|PGRST202|42P01|schema cache|hifi_bulk_jobs|hifi_claim_bulk_batch/i.test(detail))
+   return fail('Tabel atau fungsi bulk campaign belum tersedia di Supabase. Jalankan migrasi SQL 20261125_bulk_campaign_jobs.sql di Supabase SQL Editor, lalu coba lagi.',503)
+  if(/42501|permission denied/i.test(detail))
+   return fail('Akses database bulk campaign ditolak. Periksa service role key dan izin tabel di Supabase.',503)
+  if(/Supabase belum dikonfigurasi/i.test(detail))
+   return fail('Supabase belum dikonfigurasi di Cloudflare Runtime Variables and Secrets.',503)
+  return fail('Gagal memproses campaign. Periksa Cloudflare Observability Logs untuk detail kesalahan.',500)
+ }
 }

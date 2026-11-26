@@ -64,6 +64,27 @@ const english: Record<string,string> = {
   "Gagal refresh": "Refresh failed"
 }
 const translate = (value:string,lang:Lang) => lang==='en'?(english[value]||value):value
+const translateParserError = (value:string,lang:Lang) => {
+ if(lang==='id') return value
+ const exact:Record<string,string> = {
+  'Maksimal ukuran file 100 MB':'Maximum file size is 100 MB',
+  'Gunakan CSV atau XLSX':'Use a CSV or XLSX file',
+  'File kosong':'The file is empty',
+  'Kolom customer_id, customer_name, dan phone_number wajib ada':'Required columns: customer_id, customer_name, phone_number',
+  'File XLSX tidak valid':'Invalid XLSX file',
+  'File Excel terlalu besar':'Excel file is too large',
+  'Kompresi XLSX tidak didukung':'XLSX compression is not supported',
+  'Worksheet tidak ditemukan':'Excel worksheet not found',
+  'Tidak ada pelanggan dalam file':'No customers found in the file',
+  'CSV memiliki tanda kutip tidak tertutup':'CSV contains an unclosed quotation mark',
+  'Maksimal 500.000 pelanggan':'Maximum 500,000 customers'
+ }
+ if(exact[value])return exact[value]
+ if(value.startsWith('Customer ID duplikat'))return value.replace('Customer ID duplikat pada file:','Duplicate customer ID:').replace('Customer ID duplikat:','Duplicate customer ID:')
+ if(value.startsWith('Kolom kosong pada baris '))return value.replace('Kolom kosong pada baris ','Missing required data on row ')
+ if(value.startsWith('Customer ID, nama, atau nomor telepon tidak valid pada baris '))return value.replace('Customer ID, nama, atau nomor telepon tidak valid pada baris ','Invalid customer ID, name, or phone number on row ')
+ return value
+}
 const translateServerError=(value:string,lang:Lang)=>lang==='en' ? ({'Tidak diizinkan':'Access denied','Password salah.':'Incorrect password.',"Campaign tidak ditemukan":'Campaign not found','Batch terlalu besar':'Batch is too large','Request tidak valid':'Invalid request','Campaign belum selesai diproses':'Campaign processing is not complete'} as Record<string,string>)[value]||value : value
 async function request(body:Record<string,unknown>) {
  const r=await fetch('/api/upload/bulk',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
@@ -160,7 +181,7 @@ export default function UploadPage(){
    if(status?.job.status==='uploading'&&(data.length!==status.job.total_customers||selected.name!==status.job.file_name))
     throw Error(t("Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru."))
    setRows(data);setFile(selected);setMessage(num(data.length)+t(" pelanggan valid. Siap diproses."))
-  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t("Gagal membaca file"))}
+  }catch(e){setError(e instanceof Error?translateParserError(e.message,lang):t("Gagal membaca file"))}
   finally{setParsing(false)}
  }
  async function run(){
@@ -245,7 +266,7 @@ export default function UploadPage(){
       {!status&&<div><label htmlFor="bulk-image" className="mb-1 block text-sm font-bold">{t("URL gambar header KATA (HTTPS)")}</label><input id="bulk-image" type="url" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} placeholder="https://example.com/hifi-banner.jpg" className="w-full rounded-lg border p-3 text-sm"/></div>}
      </section>
      <section className="space-y-5 rounded-xl bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold">2. Upload &amp; Generate Link</h2>
+      <h2 className="text-xl font-bold">{lang==='en'?'2. Upload & Generate Links':'2. Upload & Generate Link'}</h2>
       {status&&<><Progress label={t('Batch data tersimpan')} lang={lang} value={uploaded} max={total}/><Progress label={t('Batch diproses')} lang={lang} value={processed} max={total}/>
        <div className="grid grid-cols-3 gap-2 text-center text-sm"><div className="rounded-lg bg-[#f2f5ff] p-3"><strong className="block text-xl">{num(status.stats.created)}</strong>{t("Link baru")}</div><div className="rounded-lg bg-[#f2f5ff] p-3"><strong className="block text-xl">{num(status.stats.reused)}</strong>{t("Digunakan lagi")}</div><div className="rounded-lg bg-[#fff3f3] p-3"><strong className="block text-xl">{num(status.stats.skipped)}</strong>{t("Dilewati")}</div></div>
        <p className="text-sm text-[#706577]">{percent}% {lang==='en'?'complete · Progress saved in database':'selesai · Progres tersimpan di database'}</p>

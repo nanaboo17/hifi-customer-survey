@@ -22,6 +22,7 @@ const en: Record<string,string> = {
  'Apakah Anda membutuhkan bantuan terkait koneksi internet?': 'Do you need help with your internet connection?',
  'Apakah Anda ingin mendapatkan informasi tentang Freeze Bill?': 'Would you like more information about Freeze Bill?',
  'Pilih satu jawaban yang paling sesuai dengan kondisi Anda.': 'Select the answer that best describes your situation.',
+ 'Tuliskan alasan Anda secara singkat.': 'Briefly tell us your reason.',
  'Tim HiFi dapat membantu melakukan pengecekan koneksi berdasarkan permintaan Anda.': 'The HiFi team can help check your connection upon request.',
  'Freeze Bill merupakan pilihan layanan bagi pelanggan tertentu sesuai ketentuan yang berlaku. Memilih Ya hanya mencatat minat untuk mendapatkan informasi; tagihan tidak otomatis dibekukan.': 'Freeze Bill may be available to eligible customers, subject to applicable terms. Selecting Yes only requests more information; your bill will not be frozen automatically.',
  'Silakan tuliskan alasan lainnya': 'Please tell us your reason',

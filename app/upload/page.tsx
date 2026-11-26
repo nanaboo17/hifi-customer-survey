@@ -250,7 +250,7 @@ export default function UploadPage(){
     </form>:
     <>
      <section className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">1. Campaign</h2>{status&&<div className="flex gap-2"><button onClick={()=>void refresh().catch(e=>setError(e instanceof Error?translateServerError(e.message,lang):{t("Gagal refresh")}))} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">Refresh</button><button onClick={newCampaign} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">{t("Campaign baru")}</button></div>}</div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">1. Campaign</h2>{status&&<div className="flex gap-2"><button onClick={()=>void refresh().catch(e=>setError(e instanceof Error?translateServerError(e.message,lang):t("Gagal refresh")))} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">Refresh</button><button onClick={newCampaign} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">{t("Campaign baru")}</button></div>}</div>
       {status?<div className="space-y-1 text-sm"><p><strong>{t("Nama file:")}</strong> {status.job.file_name}</p><p><strong>Campaign ID:</strong> <span className="break-all">{status.job.id}</span></p><p><strong>{t("Status:")}</strong> {status.job.status}</p></div>:
        <p className="text-sm text-[#746a76]">{t("Unggah satu file untuk membuat campaign baru. Semua batch disimpan di Supabase agar dapat dilanjutkan setelah refresh.")}</p>}
       {(status?.job.status==='uploading'||!status)&&<>

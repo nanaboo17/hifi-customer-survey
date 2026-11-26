@@ -32,14 +32,23 @@ const STATUS_INFO: Record<LinkProblem, { title: string; message: string; tone: '
   },
 }
 
+const STATUS_INFO_EN: Record<LinkProblem, { title: string; message: string }> = {
+ missing: { title: 'Survey link not found', message: 'Please open this page using the personal survey link HiFi sent to you on WhatsApp. Check your messages and try again.' },
+ invalid: { title: 'Invalid survey link', message: 'We could not recognize this survey link. Please make sure you are using the latest link we sent you.' },
+ expired: { title: 'Survey link expired', message: 'This survey link has expired. Please contact HiFi if you would still like to participate.' },
+ already_submitted: { title: 'Survey already submitted', message: 'We have already received your response. Thank you for taking part in the HiFi survey.' },
+ unconfigured: { title: 'Survey temporarily unavailable', message: 'The survey service is currently unavailable. Please try again later.' },
+}
+
 const TONES: Record<string, { badge: string; icon: LucideIcon }> = {
   warn: { badge: 'bg-[#FEF2F2] text-[#E11D48]', icon: Link2Off },
   info: { badge: 'bg-[#FFF7ED] text-[#EA8A16]', icon: TimerOff },
   ok: { badge: 'bg-[#EAFBF3] text-success', icon: CheckCircle2 },
 }
 
-export function StatusView({ status }: { status: LinkProblem }) {
-  const info = STATUS_INFO[status]
+export function StatusView({ status, language = 'id' }: { status: LinkProblem; language?: 'id' | 'en' }) {
+  const base = STATUS_INFO[status]
+  const info = language === 'en' ? { ...base, ...STATUS_INFO_EN[status] } : base
   const tone = TONES[info.tone]
   const Icon = status === 'unconfigured' ? AlertTriangle : tone.icon
 
@@ -56,11 +65,10 @@ export function StatusView({ status }: { status: LinkProblem }) {
 
       <div className="mt-7 border-t-2 border-[#241638] pt-5">
         <p className="flex items-center gap-2 text-[13px] font-semibold text-ink">
-          <ShieldCheck size={16} className="text-brand" aria-hidden /> Butuh bantuan?
+          <ShieldCheck size={16} className="text-brand" aria-hidden /> {language === 'en' ? 'Need help?' : 'Butuh bantuan?'}
         </p>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-          Hubungi tim Customer Experience HiFi melalui nomor layanan resmi atau balas pesan WhatsApp yang berisi tautan
-          survei ini.
+          {language === 'en' ? 'Contact the HiFi Customer Experience team through the official support number, or reply to the WhatsApp message containing your survey link.' : 'Hubungi tim Customer Experience HiFi melalui nomor layanan resmi atau balas pesan WhatsApp yang berisi tautan survei ini.'}
         </p>
       </div>
     </div>

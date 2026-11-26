@@ -11,60 +11,57 @@ const storageKey = 'hifi_bulk_job_id'
 const langKey = 'hifi_admin_language'
 type Lang = 'id' | 'en'
 const english: Record<string,string> = {
-  {t("Upload Pelanggan")}: "Customer Upload",
-  {t("Upload pelanggan hingga 500.000 dalam satu halaman · CSV/XLSX maksimal 100 MB · pemrosesan otomatis per 500 pelanggan")}: "Upload up to 500,000 customers on one page · CSV/XLSX up to 100 MB · automatic batches of 500",
-  {t("Memeriksa sesi admin...")}: "Checking admin session...",
-  {t("Login Admin")}: "Admin Login",
-  {t("Password admin")}: "Admin password",
-  {t("Masuk")}: "Log in",
-  {t("Campaign baru")}: "New campaign",
-  {t("Nama file:")}: "File name:",
-  {t("Status:")}: {t("Status:")},
-  {t("Unggah satu file untuk membuat campaign baru. Semua batch disimpan di Supabase agar dapat dilanjutkan setelah refresh.")}: "Upload one file to create a campaign. All batches are saved in Supabase so you can resume after refreshing.",
-  {t("Membaca file...")}: "Reading file...",
-  {t("Pilih file CSV / XLSX hingga 100 MB")}: "Choose CSV / XLSX file up to 100 MB",
-  {t("Untuk 500.000 baris, CSV lebih ringan dan disarankan menggunakan desktop.")}: "For 500,000 rows, CSV is more efficient. A desktop browser is recommended.",
-  {t("pelanggan siap diproses")}: "customers ready to process",
-  {t("Sudah punya Campaign ID?")}: "Already have a Campaign ID?",
-  {t("Masukkan Campaign ID untuk resume")}: "Enter Campaign ID to resume",
-  {t("Buka campaign")}: "Open campaign",
-  {t("URL gambar header KATA (HTTPS)")}: "KATA header image URL (HTTPS)",
-  {t("Batch data tersimpan")}: "Uploaded batches",
-  {t("Batch diproses")}: "Processed batches",
-  {t("Link baru")}: "New links",
-  {t("Digunakan lagi")}: "Reused links",
-  {t("Dilewati")}: "Skipped",
-  {t("selesai · Progres tersimpan di database")}: "complete · Progress saved in the database",
-  {t("Memproses...")}: "Processing...",
-  {t("Lanjutkan proses")}: "Resume processing",
-  {t("Mulai campaign")}: "Start campaign",
-  {t("Jeda")}: "Pause",
-  {t("Proses berjalan selama halaman terbuka; Anda dapat menjeda atau melanjutkan campaign dengan ID tersimpan. Untuk pemrosesan tanpa browser terbuka, diperlukan worker terjadwal tambahan.")}: "Processing continues while this page is open. You can pause or resume using the saved campaign ID. Processing with the browser closed requires a separately configured scheduled worker.",
-  {t("Unduh ")}: "Download ",
-  {t(" bagian CSV, masing-masing hingga 25.000 pelanggan. File berisi header dan token website CTA untuk KATA.")}: " CSV parts, each containing up to 25,000 customers. Files include headers and website CTA tokens for KATA.",
-  {t("Pelanggan dilewati — unduh laporan alasan:")}: "Skipped customers — download reason reports:",
-  {t("Gagal memproses data")}: "Failed to process data",
-  {t("Gagal membaca campaign")}: "Failed to load campaign",
-  {t("Tidak dapat mengecek sesi admin")}: "Unable to check admin session",
-  {t("Masukkan Campaign ID yang valid")}: "Enter a valid Campaign ID",
-  {t("Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan.")}: "Campaign found. Resume from your saved progress.",
-  {t("Campaign tidak ditemukan")}: "Campaign not found",
-  {t("Password tidak valid")}: "Invalid password",
-  {t("Gagal login")}: "Login failed",
-  {t("Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru.")}: "To resume this upload, select the original file or create a new campaign.",
-  {t(" pelanggan valid. Siap diproses.")}: " valid customers. Ready to process.",
-  {t("Gagal membaca file")}: "Unable to read file",
-  {t("Pilih file terlebih dahulu")}: "Select a file first",
-  {t("Masukkan URL gambar header HTTPS")}: "Enter an HTTPS header image URL",
-  {t("Campaign belum siap")}: "Campaign is not ready",
-  {t("Pilih ulang file awal untuk melanjutkan upload")}: "Select the original file again to resume uploading",
-  {t("File berbeda dari campaign yang tersimpan")}: "This file does not match the saved campaign",
-  {t("Dihentikan. Progress tersimpan; bisa dilanjutkan.")}: "Paused. Progress is saved and can be resumed.",
-  {t("Ada batch yang sedang diproses. Coba lanjutkan kembali sebentar lagi.")}: "Another batch is being processed. Try resuming shortly.",
-  {t("Proses dihentikan sementara. Klik Lanjutkan untuk memproses sisa batch.")}: "Processing paused. Click Resume to continue with the remaining batches.",
-  {t("Selesai! Unduh semua bagian CSV untuk diunggah ke KATA.")}: "Complete! Download all CSV parts for KATA.",
-  {t("Gagal memproses. Progress sudah tersimpan; silakan coba kembali.")}: "Processing failed. Your progress is saved; please try again.",
-  {t("Gagal refresh")}: "Refresh failed"
+  "Upload Pelanggan": "Customer Upload",
+  "Upload pelanggan hingga 500.000 dalam satu halaman · CSV/XLSX maksimal 100 MB · pemrosesan otomatis per 500 pelanggan": "Upload up to 500,000 customers on one page · CSV/XLSX up to 100 MB · automatic batches of 500",
+  "Memeriksa sesi admin...": "Checking admin session...",
+  "Login Admin": "Admin Login",
+  "Password admin": "Admin password",
+  "Masuk": "Log in",
+  "Campaign baru": "New campaign",
+  "Nama file:": "File name:",
+  "Status:": "Status:",
+  "Unggah satu file untuk membuat campaign baru. Semua batch disimpan di Supabase agar dapat dilanjutkan setelah refresh.": "Upload one file to create a campaign. All batches are saved in Supabase so you can resume after refreshing.",
+  "Membaca file...": "Reading file...",
+  "Pilih file CSV / XLSX hingga 100 MB": "Choose CSV / XLSX file up to 100 MB",
+  "Untuk 500.000 baris, CSV lebih ringan dan disarankan menggunakan desktop.": "For 500,000 rows, CSV is more efficient. A desktop browser is recommended.",
+  "pelanggan siap diproses": "customers ready to process",
+  "Sudah punya Campaign ID?": "Already have a Campaign ID?",
+  "Masukkan Campaign ID untuk resume": "Enter Campaign ID to resume",
+  "Buka campaign": "Open campaign",
+  "URL gambar header KATA (HTTPS)": "KATA header image URL (HTTPS)",
+  "Batch data tersimpan": "Uploaded batches",
+  "Batch diproses": "Processed batches",
+  "Link baru": "New links",
+  "Digunakan lagi": "Reused links",
+  "Dilewati": "Skipped",
+  "Memproses...": "Processing...",
+  "Lanjutkan proses": "Resume processing",
+  "Mulai campaign": "Start campaign",
+  "Jeda": "Pause",
+  "Proses berjalan selama halaman terbuka; Anda dapat menjeda atau melanjutkan campaign dengan ID tersimpan. Untuk pemrosesan tanpa browser terbuka, diperlukan worker terjadwal tambahan.": "Processing continues while this page is open. You can pause or resume using the saved campaign ID. Processing with the browser closed requires a separately configured scheduled worker.",
+  "Pelanggan dilewati — unduh laporan alasan:": "Skipped customers — download reason reports:",
+  "Gagal memproses data": "Failed to process data",
+  "Gagal membaca campaign": "Failed to load campaign",
+  "Tidak dapat mengecek sesi admin": "Unable to check admin session",
+  "Masukkan Campaign ID yang valid": "Enter a valid Campaign ID",
+  "Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan.": "Campaign found. Resume from your saved progress.",
+  "Campaign tidak ditemukan": "Campaign not found",
+  "Password tidak valid": "Invalid password",
+  "Gagal login": "Login failed",
+  "Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru.": "To resume this upload, select the original file or create a new campaign.",
+  " pelanggan valid. Siap diproses.": " valid customers. Ready to process.",
+  "Gagal membaca file": "Unable to read file",
+  "Pilih file terlebih dahulu": "Select a file first",
+  "Masukkan URL gambar header HTTPS": "Enter an HTTPS header image URL",
+  "Campaign belum siap": "Campaign is not ready",
+  "Pilih ulang file awal untuk melanjutkan upload": "Select the original file again to resume uploading",
+  "File berbeda dari campaign yang tersimpan": "This file does not match the saved campaign",
+  "Dihentikan. Progress tersimpan; bisa dilanjutkan.": "Paused. Progress is saved and can be resumed.",
+  "Ada batch yang sedang diproses. Coba lanjutkan kembali sebentar lagi.": "Another batch is being processed. Try resuming shortly.",
+  "Proses dihentikan sementara. Klik Lanjutkan untuk memproses sisa batch.": "Processing paused. Click Resume to continue with the remaining batches.",
+  "Selesai! Unduh semua bagian CSV untuk diunggah ke KATA.": "Complete! Download all CSV parts for KATA.",
+  "Gagal memproses. Progress sudah tersimpan; silakan coba kembali.": "Processing failed. Your progress is saved; please try again.",
+  "Gagal refresh": "Refresh failed"
 }
 const translate = (value:string,lang:Lang) => lang==='en'?(english[value]||value):value
 const translateServerError=(value:string,lang:Lang)=>lang==='en' ? ({'Tidak diizinkan':'Access denied','Password salah.':'Incorrect password.',t({t("Campaign tidak ditemukan")}):'Campaign not found','Batch terlalu besar':'Batch is too large','Request tidak valid':'Invalid request','Campaign belum selesai diproses':'Campaign processing is not complete'} as Record<string,string>)[value]||value : value
@@ -142,7 +139,7 @@ export default function UploadPage(){
    localStorage.setItem(storageKey,id)
    setStatus(next);setImageUrl(next.job.header_image_url);setRows([]);setFile(null)
    setMessage(t({t("Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan.")}))
-  }catch(e){setError(e instanceof Error?e.message:t({t("Campaign tidak ditemukan")}))}
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Campaign tidak ditemukan")}))}
  }
  async function login(){
   setBusy(true);setError('')
@@ -153,7 +150,7 @@ export default function UploadPage(){
    setPassword('');setLogged(true)
    const id=localStorage.getItem(storageKey)
    if(id){try{await refresh(id)}catch{localStorage.removeItem(storageKey)}}
-  }catch(e){setError(e instanceof Error?e.message:t({t("Gagal login")}))}finally{setBusy(false)}
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Gagal login")}))}finally{setBusy(false)}
  }
  async function selectFile(selected:File|undefined) {
   if(!selected)return
@@ -163,7 +160,7 @@ export default function UploadPage(){
    if(status?.job.status==='uploading'&&(data.length!==status.job.total_customers||selected.name!==status.job.file_name))
     throw Error(t({t("Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru.")}))
    setRows(data);setFile(selected);setMessage(num(data.length)+t({t(" pelanggan valid. Siap diproses.")}))
-  }catch(e){setError(e instanceof Error?e.message:t({t("Gagal membaca file")}))}
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Gagal membaca file")}))}
   finally{setParsing(false)}
  }
  async function run(){
@@ -211,7 +208,7 @@ export default function UploadPage(){
    }
    if(stop.current)setMessage(t({t("Proses dihentikan sementara. Klik Lanjutkan untuk memproses sisa batch.")}))
    else if(s?.job.status==='complete')setMessage(t({t("Selesai! Unduh semua bagian CSV untuk diunggah ke KATA.")}))
-  }catch(e){setError(e instanceof Error?e.message:t({t("Gagal memproses. Progress sudah tersimpan; silakan coba kembali.")}))}
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Gagal memproses. Progress sudah tersimpan; silakan coba kembali.")}))}
   finally{setBusy(false)}
  }
  function newCampaign(){
@@ -232,7 +229,7 @@ export default function UploadPage(){
     </form>:
     <>
      <section className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">1. Campaign</h2>{status&&<div className="flex gap-2"><button onClick={()=>void refresh().catch(e=>setError(e instanceof Error?e.message:{t("Gagal refresh")}))} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">Refresh</button><button onClick={newCampaign} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">{t("Campaign baru")}</button></div>}</div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">1. Campaign</h2>{status&&<div className="flex gap-2"><button onClick={()=>void refresh().catch(e=>setError(e instanceof Error?translateServerError(e.message,lang):{t("Gagal refresh")}))} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">Refresh</button><button onClick={newCampaign} disabled={busy} className="rounded-lg border px-3 py-2 text-sm font-semibold">{t("Campaign baru")}</button></div>}</div>
       {status?<div className="space-y-1 text-sm"><p><strong>{t("Nama file:")}</strong> {status.job.file_name}</p><p><strong>Campaign ID:</strong> <span className="break-all">{status.job.id}</span></p><p><strong>{t("Status:")}</strong> {status.job.status}</p></div>:
        <p className="text-sm text-[#746a76]">{t("Unggah satu file untuk membuat campaign baru. Semua batch disimpan di Supabase agar dapat dilanjutkan setelah refresh.")}</p>}
       {(status?.job.status==='uploading'||!status)&&<>
@@ -242,21 +239,21 @@ export default function UploadPage(){
         <span className="mt-2 block text-xs text-[#827687]">{t("Untuk 500.000 baris, CSV lebih ringan dan disarankan menggunakan desktop.")}</span>
         <input type="file" accept=".csv,.xlsx" className="sr-only" disabled={parsing||busy} onChange={e=>void selectFile(e.target.files?.[0])}/>
        </label>
-       <p className="text-sm font-semibold">{rows.length?num(rows.length)+' pelanggan siap diproses':''}</p>
+       <p className="text-sm font-semibold">{rows.length?num(rows.length)+' '+t('pelanggan siap diproses'):''}</p>
       </>}
       {!status&&<div className="rounded-lg border border-[#e7dce7] bg-[#fcf9fc] p-3"><label htmlFor="resume-id" className="mb-2 block text-sm font-bold">{t("Sudah punya Campaign ID?")}</label><div className="flex flex-wrap gap-2"><input id="resume-id" value={resumeId} onChange={e=>setResumeId(e.target.value)} placeholder={t("Masukkan Campaign ID untuk resume")} className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"/><button type="button" onClick={()=>void resumeCampaign()} className="rounded-lg bg-[#4924ac] px-3 py-2 text-sm font-semibold text-white">{t("Buka campaign")}</button></div></div>}
       {!status&&<div><label htmlFor="bulk-image" className="mb-1 block text-sm font-bold">{t("URL gambar header KATA (HTTPS)")}</label><input id="bulk-image" type="url" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} placeholder="https://example.com/hifi-banner.jpg" className="w-full rounded-lg border p-3 text-sm"/></div>}
      </section>
      <section className="space-y-5 rounded-xl bg-white p-6 shadow-sm">
       <h2 className="text-xl font-bold">2. Upload &amp; Generate Link</h2>
-      {status&&<><Progress label={t("Batch data tersimpan")} value={uploaded} max={total}/><Progress label={t("Batch diproses")} value={processed} max={total}/>
+      {status&&<><Progress label={t('Batch data tersimpan')} lang={lang} value={uploaded} max={total}/><Progress label={t('Batch diproses')} lang={lang} value={processed} max={total}/>
        <div className="grid grid-cols-3 gap-2 text-center text-sm"><div className="rounded-lg bg-[#f2f5ff] p-3"><strong className="block text-xl">{num(status.stats.created)}</strong>{t("Link baru")}</div><div className="rounded-lg bg-[#f2f5ff] p-3"><strong className="block text-xl">{num(status.stats.reused)}</strong>{t("Digunakan lagi")}</div><div className="rounded-lg bg-[#fff3f3] p-3"><strong className="block text-xl">{num(status.stats.skipped)}</strong>{t("Dilewati")}</div></div>
-       <p className="text-sm text-[#706577]">{percent}% selesai · Progres tersimpan di database</p>
+       <p className="text-sm text-[#706577]">{percent}% {lang==='en'?'complete · Progress saved in database':'selesai · Progres tersimpan di database'}</p>
       </>}
-      {status?.job.status!=='complete'&&<div className="flex gap-3"><button onClick={()=>void run()} disabled={busy?true:!status&&(!file||!rows.length||!imageUrl.trim())} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#ed174c] px-4 py-3 font-bold text-white disabled:opacity-40">{busy?<><Loader2 className="animate-spin" size={19}/>{t("Memproses...")}</>:status?t({t("Lanjutkan proses")}):t({t("Mulai campaign")})}</button>{busy&&<button onClick={()=>{stop.current=true}} className="flex items-center gap-1 rounded-xl border px-3 py-2 font-semibold"><PauseCircle size={17}/>{t("Jeda")}</button>}</div>}
+      {status?.job.status!=='complete'&&<div className="flex gap-3"><button onClick={()=>void run()} disabled={busy?true:!status&&(!file||!rows.length||!imageUrl.trim())} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#ed174c] px-4 py-3 font-bold text-white disabled:opacity-40">{busy?<><Loader2 className="animate-spin" size={19}/>{t("Memproses...")}</>:status?t('Lanjutkan proses'):t('Mulai campaign')}</button>{busy&&<button onClick={()=>{stop.current=true}} className="flex items-center gap-1 rounded-xl border px-3 py-2 font-semibold"><PauseCircle size={17}/>{t("Jeda")}</button>}</div>}
       <p className="text-xs text-[#756978]">{t("Proses berjalan selama halaman terbuka; Anda dapat menjeda atau melanjutkan campaign dengan ID tersimpan. Untuk pemrosesan tanpa browser terbuka, diperlukan worker terjadwal tambahan.")}</p>
      </section>
-     {status?.job.status==='complete'&&<section className="rounded-xl bg-white p-6 shadow-sm"><h2 className="mb-3 text-xl font-bold">3. Download CSV KATA</h2><p className="mb-4 text-sm">Unduh {status.export_parts} bagian CSV, masing-masing hingga 25.000 pelanggan. File berisi header dan token website CTA untuk KATA.</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({length:status.export_parts},(_,i)=><a key={i} className="flex items-center justify-center gap-2 rounded-lg border border-[#ed174c] px-3 py-3 text-sm font-bold text-[#ad1244]" href={'/api/upload/bulk?mode=export&job='+status.job.id+'&part='+i} download><Download size={16}/>Part {i+1}</a>)}</div>{status.stats.skipped>0&&<div className="mt-5"><p className="mb-3 text-sm font-bold text-[#8d2636]">{t("Pelanggan dilewati — unduh laporan alasan:")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Array.from({length:status.export_parts},(_,i)=><a key={i} className="rounded-lg bg-[#fff0f0] px-3 py-2 text-center text-xs font-bold text-[#962735]" href={'/api/upload/bulk?mode=errors&job='+status.job.id+'&part='+i} download>Errors Part {i+1}</a>)}</div></div>}</section>}
+     {status?.job.status==='complete'&&<section className="rounded-xl bg-white p-6 shadow-sm"><h2 className="mb-3 text-xl font-bold">3. Download CSV KATA</h2><p className="mb-4 text-sm">{lang==='en'?`Download ${status.export_parts} CSV parts, each with up to 25,000 customers. Files contain KATA headers and website CTA tokens.`:`Unduh ${status.export_parts} bagian CSV, masing-masing hingga 25.000 pelanggan. File berisi header dan token website CTA untuk KATA.`}</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({length:status.export_parts},(_,i)=><a key={i} className="flex items-center justify-center gap-2 rounded-lg border border-[#ed174c] px-3 py-3 text-sm font-bold text-[#ad1244]" href={'/api/upload/bulk?mode=export&job='+status.job.id+'&part='+i} download><Download size={16}/>Part {i+1}</a>)}</div>{status.stats.skipped>0&&<div className="mt-5"><p className="mb-3 text-sm font-bold text-[#8d2636]">{t("Pelanggan dilewati — unduh laporan alasan:")}</p><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Array.from({length:status.export_parts},(_,i)=><a key={i} className="rounded-lg bg-[#fff0f0] px-3 py-2 text-center text-xs font-bold text-[#962735]" href={'/api/upload/bulk?mode=errors&job='+status.job.id+'&part='+i} download>Errors Part {i+1}</a>)}</div></div>}</section>}
     </>
    }
    {error&&<p role="alert" className="flex items-start gap-2 rounded-lg bg-[#ffe7e7] p-4 text-sm font-semibold text-[#a22235]"><AlertCircle size={18}/>{error}</p>}

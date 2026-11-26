@@ -64,17 +64,17 @@ const english: Record<string,string> = {
   "Gagal refresh": "Refresh failed"
 }
 const translate = (value:string,lang:Lang) => lang==='en'?(english[value]||value):value
-const translateServerError=(value:string,lang:Lang)=>lang==='en' ? ({'Tidak diizinkan':'Access denied','Password salah.':'Incorrect password.',t("Campaign tidak ditemukan"):'Campaign not found','Batch terlalu besar':'Batch is too large','Request tidak valid':'Invalid request','Campaign belum selesai diproses':'Campaign processing is not complete'} as Record<string,string>)[value]||value : value
+const translateServerError=(value:string,lang:Lang)=>lang==='en' ? ({'Tidak diizinkan':'Access denied','Password salah.':'Incorrect password.',"Campaign tidak ditemukan":'Campaign not found','Batch terlalu besar':'Batch is too large','Request tidak valid':'Invalid request','Campaign belum selesai diproses':'Campaign processing is not complete'} as Record<string,string>)[value]||value : value
 async function request(body:Record<string,unknown>) {
  const r=await fetch('/api/upload/bulk',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
  const data=await r.json().catch(()=>({})) as Record<string,unknown>
- if(!r.ok)throw Error(String(data.error||t("Gagal memproses data")))
+ if(!r.ok)throw Error(String(data.error||'Gagal memproses data'))
  return data
 }
 async function fetchStatus(jobId:string):Promise<Status> {
  const r=await fetch('/api/upload/bulk?job='+encodeURIComponent(jobId),{credentials:'same-origin',cache:'no-store'})
  const data=await r.json().catch(()=>({}))
- if(!r.ok)throw Error(data.error||t("Gagal membaca campaign"))
+ if(!r.ok)throw Error(data.error||'Gagal membaca campaign')
  return data as Status
 }
 function Progress({label,value,max,lang}:{label:string;value:number;max:number;lang:Lang}) {

@@ -64,17 +64,17 @@ const english: Record<string,string> = {
   "Gagal refresh": "Refresh failed"
 }
 const translate = (value:string,lang:Lang) => lang==='en'?(english[value]||value):value
-const translateServerError=(value:string,lang:Lang)=>lang==='en' ? ({'Tidak diizinkan':'Access denied','Password salah.':'Incorrect password.',t({t("Campaign tidak ditemukan")}):'Campaign not found','Batch terlalu besar':'Batch is too large','Request tidak valid':'Invalid request','Campaign belum selesai diproses':'Campaign processing is not complete'} as Record<string,string>)[value]||value : value
+const translateServerError=(value:string,lang:Lang)=>lang==='en' ? ({'Tidak diizinkan':'Access denied','Password salah.':'Incorrect password.',t("Campaign tidak ditemukan"):'Campaign not found','Batch terlalu besar':'Batch is too large','Request tidak valid':'Invalid request','Campaign belum selesai diproses':'Campaign processing is not complete'} as Record<string,string>)[value]||value : value
 async function request(body:Record<string,unknown>) {
  const r=await fetch('/api/upload/bulk',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
  const data=await r.json().catch(()=>({})) as Record<string,unknown>
- if(!r.ok)throw Error(String(data.error||t({t("Gagal memproses data")})))
+ if(!r.ok)throw Error(String(data.error||t("Gagal memproses data")))
  return data
 }
 async function fetchStatus(jobId:string):Promise<Status> {
  const r=await fetch('/api/upload/bulk?job='+encodeURIComponent(jobId),{credentials:'same-origin',cache:'no-store'})
  const data=await r.json().catch(()=>({}))
- if(!r.ok)throw Error(data.error||t({t("Gagal membaca campaign")}))
+ if(!r.ok)throw Error(data.error||t("Gagal membaca campaign"))
  return data as Status
 }
 function Progress({label,value,max,lang}:{label:string;value:number;max:number;lang:Lang}) {
@@ -125,7 +125,7 @@ export default function UploadPage(){
       catch{localStorage.removeItem(storageKey)}
      }
     }
-   }catch{if(active)setError(t({t("Tidak dapat mengecek sesi admin")}))}
+   }catch{if(active)setError(t("Tidak dapat mengecek sesi admin"))}
    finally{if(active)setChecking(false)}
   })()
   return()=>{active=false}
@@ -134,23 +134,23 @@ export default function UploadPage(){
   setError('');setMessage('')
   try {
    const id=resumeId.trim()
-   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error(t({t("Masukkan Campaign ID yang valid")}))
+   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error(t("Masukkan Campaign ID yang valid"))
    const next=await fetchStatus(id)
    localStorage.setItem(storageKey,id)
    setStatus(next);setImageUrl(next.job.header_image_url);setRows([]);setFile(null)
-   setMessage(t({t("Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan.")}))
-  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Campaign tidak ditemukan")}))}
+   setMessage(t("Campaign berhasil ditemukan. Lanjutkan dari progress tersimpan."))
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t("Campaign tidak ditemukan"))}
  }
  async function login(){
   setBusy(true);setError('')
   try{
    const r=await fetch('/api/upload/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})})
    const d=await r.json()
-   if(!r.ok)throw Error(d.error||t({t("Password tidak valid")}))
+   if(!r.ok)throw Error(d.error||t("Password tidak valid"))
    setPassword('');setLogged(true)
    const id=localStorage.getItem(storageKey)
    if(id){try{await refresh(id)}catch{localStorage.removeItem(storageKey)}}
-  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Gagal login")}))}finally{setBusy(false)}
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t("Gagal login"))}finally{setBusy(false)}
  }
  async function selectFile(selected:File|undefined) {
   if(!selected)return
@@ -158,9 +158,9 @@ export default function UploadPage(){
   try {
    const data=await parseBulk(selected)
    if(status?.job.status==='uploading'&&(data.length!==status.job.total_customers||selected.name!==status.job.file_name))
-    throw Error(t({t("Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru.")}))
-   setRows(data);setFile(selected);setMessage(num(data.length)+t({t(" pelanggan valid. Siap diproses.")}))
-  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Gagal membaca file")}))}
+    throw Error(t("Untuk melanjutkan upload yang tersimpan, pilih file yang sama atau buat campaign baru."))
+   setRows(data);setFile(selected);setMessage(num(data.length)+t(" pelanggan valid. Siap diproses."))
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t("Gagal membaca file"))}
   finally{setParsing(false)}
  }
  async function run(){
@@ -169,19 +169,19 @@ export default function UploadPage(){
   try {
    let s=status,jobId=s?.job.id
    if(!jobId){
-    if(!file||!rows.length)throw Error(t({t("Pilih file terlebih dahulu")}))
-    if(!/^https:\/\/[^\s]+$/.test(imageUrl))throw Error(t({t("Masukkan URL gambar header HTTPS")}))
+    if(!file||!rows.length)throw Error(t("Pilih file terlebih dahulu"))
+    if(!/^https:\/\/[^\s]+$/.test(imageUrl))throw Error(t("Masukkan URL gambar header HTTPS"))
     const created=await request({action:'create',filename:file.name,total:rows.length,header_image_url:imageUrl})
     jobId=String(created.job_id)
     localStorage.setItem(storageKey,jobId)
     s=await fetchStatus(jobId);setStatus(s)
    }
-   if(!s)throw Error(t({t("Campaign belum siap")}))
+   if(!s)throw Error(t("Campaign belum siap"))
    if(s.job.status==='uploading'){
-    if(!rows.length||!file)throw Error(t({t("Pilih ulang file awal untuk melanjutkan upload")}))
-    if(rows.length!==s.job.total_customers||file.name!==s.job.file_name)throw Error(t({t("File berbeda dari campaign yang tersimpan")}))
+    if(!rows.length||!file)throw Error(t("Pilih ulang file awal untuk melanjutkan upload"))
+    if(rows.length!==s.job.total_customers||file.name!==s.job.file_name)throw Error(t("File berbeda dari campaign yang tersimpan"))
     for(let i=0;i<s.job.total_batches;i++){
-     if(stop.current){setMessage(t({t("Dihentikan. Progress tersimpan; bisa dilanjutkan.")}));return}
+     if(stop.current){setMessage(t("Dihentikan. Progress tersimpan; bisa dilanjutkan."));return}
      await request({action:'append',job_id:jobId,index:i,customers:rows.slice(i*500,(i+1)*500)})
      if((i+1)%10===0||i===s.job.total_batches-1){
       s=await fetchStatus(jobId);setStatus(s)
@@ -199,16 +199,16 @@ export default function UploadPage(){
      if(output.complete){s=await fetchStatus(jobId);setStatus(s);break}
      if(output.busy){
       waiting++
-      if(waiting>=4){s=await fetchStatus(jobId);setStatus(s);setMessage(t({t("Ada batch yang sedang diproses. Coba lanjutkan kembali sebentar lagi.")}));break}
+      if(waiting>=4){s=await fetchStatus(jobId);setStatus(s);setMessage(t("Ada batch yang sedang diproses. Coba lanjutkan kembali sebentar lagi."));break}
       await new Promise(resolve=>setTimeout(resolve,1000))
      }else waiting=0
      if(output.processed||waiting){s=await fetchStatus(jobId);setStatus(s)}
      if(s.job.status==='complete')break
     }
    }
-   if(stop.current)setMessage(t({t("Proses dihentikan sementara. Klik Lanjutkan untuk memproses sisa batch.")}))
-   else if(s?.job.status==='complete')setMessage(t({t("Selesai! Unduh semua bagian CSV untuk diunggah ke KATA.")}))
-  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t({t("Gagal memproses. Progress sudah tersimpan; silakan coba kembali.")}))}
+   if(stop.current)setMessage(t("Proses dihentikan sementara. Klik Lanjutkan untuk memproses sisa batch."))
+   else if(s?.job.status==='complete')setMessage(t("Selesai! Unduh semua bagian CSV untuk diunggah ke KATA."))
+  }catch(e){setError(e instanceof Error?translateServerError(e.message,lang):t("Gagal memproses. Progress sudah tersimpan; silakan coba kembali."))}
   finally{setBusy(false)}
  }
  function newCampaign(){
@@ -235,7 +235,7 @@ export default function UploadPage(){
       {(status?.job.status==='uploading'||!status)&&<>
        <label className="block cursor-pointer rounded-xl border-2 border-dashed border-[#cebdca] bg-[#fdf9fc] px-5 py-8 text-center">
         <UploadCloud className="mx-auto mb-3" size={32}/>
-        <span className="block text-sm font-bold">{parsing?t({t("Membaca file...")}):file?file.name:t({t("Pilih file CSV / XLSX hingga 100 MB")})}</span>
+        <span className="block text-sm font-bold">{parsing?t("Membaca file..."):file?file.name:t("Pilih file CSV / XLSX hingga 100 MB")}</span>
         <span className="mt-2 block text-xs text-[#827687]">{t("Untuk 500.000 baris, CSV lebih ringan dan disarankan menggunakan desktop.")}</span>
         <input type="file" accept=".csv,.xlsx" className="sr-only" disabled={parsing||busy} onChange={e=>void selectFile(e.target.files?.[0])}/>
        </label>
